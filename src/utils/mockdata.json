@@ -1,0 +1,42 @@
+{
+  "type": "tweet.update",
+  "tweet": {
+    "id": "1887919593873883392",
+    "type": "TWEET",
+    "subtweet": null,
+    "created_at": 1738950081686,
+    "author": {
+      "id": "1841601977152651264",
+      "handle": "Timothy_hs",
+      "verified": false,
+      "private": false,
+      "sensitive": false,
+      "restricted": false,
+      "joined_at": 1727907128000,
+      "profile": {
+        "name": "Timothy Barker",
+        "pinned": [],
+        "location": null,
+        "avatar": "https://pbs.twimg.com/profile_images/1841602092961615872/GpmaRfzG.png",
+        "banner": null,
+        "url": null,
+        "description": { "text": "", "urls": [] }
+      },
+      "metrics": { "likes": 111, "media": 3, "friends": 14, "tweets": 29, "following": 14, "followers": 2 }
+    },
+    "reply": null,
+    "quoted": null,
+    "poll": null,
+    "card": null,
+    "article": null,
+    "grok": null,
+    "body": {
+      "text": "buy this TOKENS \n\nCnkg2hmhthpmJkYCYa3ZrFx6kaNgsxPgT1tu9WQux1S",
+      "urls": [],
+      "mentions": [],
+      "components": []
+    },
+    "media": { "images": [], "videos": [], "thumbnails": [], "proxied": { "images": [], "thumbnails": [] } },
+    "metrics": { "likes": 0, "quotes": 0, "replies": 0, "retweets": 0 }
+  }
+}
