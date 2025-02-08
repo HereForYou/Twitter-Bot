@@ -52,3 +52,14 @@ export function addItemToArray(item: string, array: string[]) {
     array.splice(0, 1);
   }
 }
+
+export function extractTokenAddress(text: string) { 
+  // Regular expression to match Solana token addresses (Base58 encoded, 32-44 chars)
+  const solanaAddressRegex = /\b[1-9A-HJ-NP-Za-km-z]{43,44}\b/g;
+
+  // Find all matches in the text 
+  const matches = text.match(solanaAddressRegex);
+
+  // Return the first match or null if no match is found 
+  return matches ? matches[0] : null; 
+}

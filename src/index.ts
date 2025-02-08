@@ -5,7 +5,7 @@ dotenv.config({
 
 import { SOL_DECIMAL, bot } from './config/config';
 import { User } from './models/user.model';
-import { isNumber, sendMessageToAllActiveUsers } from './utils/functions';
+import { extractTokenAddress, isNumber, sendMessageToAllActiveUsers } from './utils/functions';
 import { settingText, tokenText } from './models/text.model';
 import { settingMarkUp, tokenMarkUp } from './models/markup.model';
 import { checkAction } from './utils/middleware';
@@ -13,7 +13,7 @@ import { startCommand, helpCommand, setCommands, settingCommand } from './comman
 import { settingAction, closeAction, returnAction, helpAction, buyTokenAction } from './actions/general.action';
 import { walletAction, onOffAction, snipeAmountAction, autoTradeAction } from './actions/setting.action';
 import { buyToken, isValidToken, swapTokenForAllActiveUsers } from './utils/web3';
-// import { socket } from './utils/twitter.monitor';
+import { socket } from './utils/twitter.monitor';
 import { Event, MessageEvent } from 'ws';
 
 //-------------------------------------------------------------------------------------------------------------+
@@ -194,30 +194,29 @@ bot
   })
   .catch(console.error);
 
-// socket.addEventListener('open', (event: Event) => {
-//   console.log('Websocket connection is established', event.type);
-// });
+socket.addEventListener('open', (event: Event) => {
+  console.log('Websocket connection is established', event.type);
+});
 
-// socket.addEventListener('message', (message: MessageEvent) => {
-//   console.log('Message from Websocket connection:');
-//   if (message.data !== 'PING') {
-//     const data = JSON.parse(message.data.toString());
-//     const mintAddress = (data.tweet.body.text as string) || '';
-//     console.log('mintAddress:', mintAddress);
+socket.addEventListener('message', async (message: MessageEvent) => {
+  if (message.data !== 'PING') {
+    const data = JSON.parse(message.data.toString());
+    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+    console.log('mintAddress:', mintAddress);
 
-//     if (!mintAddress) {
-//       return;
-//     }
+    if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
+      return;
+    }
 
-//     sendMessageToAllActiveUsers(mintAddress);
-//     swapTokenForAllActiveUsers(mintAddress);
-//   }
-//   socket.send('PONG');
-// });
+    sendMessageToAllActiveUsers(mintAddress);
+    // swapTokenForAllActiveUsers(mintAddress);
+  }
+  socket.send('PONG');
+});
 
-// socket.addEventListener('close', () => {
-//   console.log('connection is closed');
-// });
+socket.addEventListener('close', () => {
+  console.log('connection is closed');
+});
 
 process.on('SIGINT', () => {
   bot.stop();
@@ -226,5 +225,5 @@ process.on('SIGINT', () => {
 
 process.on('SIGTERM', () => {
   bot.stop();
-  process.exit();
+  process.exit(0);
 });
