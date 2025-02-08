@@ -16,7 +16,7 @@ export const walletAction = async (ctx: MyContext) => {
       await ctx.reply("We can't find you. Please enter /start command and then try again.");
       return;
     }
-    ctx.editMessageText(newUserText(user), { parse_mode: 'MarkdownV2', reply_markup: walletMarkUp.reply_markup });
+    ctx.editMessageText(newUserText(user), { parse_mode: 'HTML', reply_markup: walletMarkUp.reply_markup });
   } catch (error) {
     console.error('Error while walletAction:', error);
   }

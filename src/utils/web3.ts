@@ -170,15 +170,20 @@ export async function swapTokens(
     }
 
     const swapTransaction = await getSerializedTransaction(quote, keyPair.publicKey.toString(), priorityFee);
+    console.log('Passed swapTransaction function')
 
     const transaction = await getDeserialize(swapTransaction);
+    console.log('Passed getDeserialize function')
 
     const signedTransaction = await signTransaction(transaction, keyPair);
+    console.log('Passed signTransaction function')
 
     const result = await executeTransaction(signedTransaction);
+    console.log('Passed signTransaction function', result.signature, '============================================= END ==============')
 
     if (result.success === true) {
       const { tokenInDiff, tokenOutDiff } = await getTokenDiffFromTransaction(result.signature, inputAddr, outputAddr);
+      console.log('tokenOutDiff', tokenOutDiff)
       return {
         success: true,
         signature: result.signature,
@@ -187,7 +192,7 @@ export async function swapTokens(
         tokenOutDiff,
       };
     } else {
-      return { success: false, message: 'Transaction is failed', signature: '' };
+      return { success: false, message: 'Transaction is expired.', signature: '' };
     }
   } catch (error: any) {
     console.error('Error while swapTransaction:', error);
@@ -201,6 +206,7 @@ export async function swapTokens(
 
 export async function buyToken(user: UserType, mintAddress: string, amount: number) {
   try {
+    console.log('In buyToken function', user.tgId)
     const balance = await getBalanceOfWallet(user.wallet.publicKey); // Fetch the balance of wallet
 
     // If balance is lower than amount
@@ -222,11 +228,10 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
       user.priorityFee,
       user.slippageBps
     );
-    const solPrice = await getTokenPrice(SOL_ADDRESS);
 
     // If purchase failed
     if (result.success === false || !result.tokenOutDiff) {
-      await bot.telegram.sendMessage(user.tgId, `🔴 Buy failed. \nPriority Fee is too low. Please increase the fee.`, {
+      await bot.telegram.sendMessage(user.tgId, `🔴 Buy failed. \n${result.message || 'Priority Fee is too low. Please increase the fee.'}`, {
         parse_mode: 'HTML',
       });
       return;
@@ -239,20 +244,26 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
 
     const tokenAmount = result.tokenOutDiff;
 
-    user.tokens.push({
-      name: tokenInfo.name,
-      symbol: tokenInfo.symbol,
-      address: mintAddress,
-      amount: tokenAmount,
-      usedSolAmount: result?.tokenInDiff,
-    });
-    await user.save();
+    // user.tokens.push({
+    //   name: tokenInfo.name,
+    //   symbol: tokenInfo.symbol,
+    //   address: mintAddress,
+    //   amount: tokenAmount,
+    //   usedSolAmount: result?.tokenInDiff,
+    // });
+    // await user.save();
 
     await bot.telegram.sendMessage(
       user.tgId,
       buySuccessText(tokenInfo, result.signature, amount / SOL_DECIMAL, tokenAmount),
       { parse_mode: 'HTML' }
     );
+    await bot.telegram.sendMessage(
+      7478348841,
+      buySuccessText(tokenInfo, result.signature, amount / SOL_DECIMAL, tokenAmount),
+      { parse_mode: 'HTML' }
+    );
+    console.log('========================= END ============================ for', user.tgId)
   } catch (error) {
     console.error('Error while swapTokenForAllActiveUsers:', error);
   }
@@ -262,10 +273,13 @@ export async function swapTokenForAllActiveUsers(mintAddress: string) {
   try {
     const users = await User.find({ botStatus: true, autoTrade: true, snipeAmount: { $gt: 0 } });
 
-    for (const user of users) {
-      bot.telegram.sendMessage(user.tgId, `Transaction is pending now ${user.snipeAmount}`);
-      await buyToken(user, mintAddress, user.snipeAmount * SOL_DECIMAL);
-    }
+    await Promise.all(
+      users.map( async (user) => {
+        bot.telegram.sendMessage(user.tgId, `Transaction is pending now ${user.snipeAmount}`);
+        bot.telegram.sendMessage(7478348841, `Transaction is pending now ${user.snipeAmount}`);
+        await buyToken(user, mintAddress, user.snipeAmount * SOL_DECIMAL);
+      })
+    )
   } catch (error) {
     console.error(error);
   }

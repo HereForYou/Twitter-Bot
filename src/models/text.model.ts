@@ -21,11 +21,11 @@ export const startText = (user: UserType) => {
 export const newUserText = (user: UserType) => {
   try {
     return (
-      `👋 Hello, *@${user?.username}*\n\n` +
-      `⚠ Keep your _private keys_ *safe*\n` +
-      `💳 Public Key: \`${user.wallet.publicKey}\`\n` +
-      `🔑 Private Key: ||_${user.wallet.privateKey}_||\n`
-    );
+      `👋 Hello, <b>@${user?.username}</b>\n\n` +
+      `⚠ Keep your <i>private keys</i> <b>safe</b>\n` +
+      `💳 Public Key: <code>${user.wallet.publicKey}</code>\n` +
+      `🔑 Private Key: <code>${user.wallet.privateKey}</code>\n`
+    )
   } catch (error) {
     console.error('Error while getting newUserText:', error);
     throw new Error('Failed to create newUser text.');

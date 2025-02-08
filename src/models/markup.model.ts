@@ -23,7 +23,7 @@ export const settingMarkUp = async (user: UserType) => {
         [Markup.button.callback(`💳 Wallet (${balance / SOL_DECIMAL})`, 'Wallet')],
         [
           Markup.button.callback(
-            `${user.botStatus ? '🆕 New Migration Alarm On 🟢' : '🆕 New Migration Alarm Off 🔴'}`,
+            `${user.botStatus ? '🆕 Tweet Alarm On 🟢' : '🆕 Tweet Alarm Off 🔴'}`,
             'On Off'
           ),
           Markup.button.callback(`${user.autoTrade ? '⚙ Auto Trade On 🟢' : '⚙ Auto Trade Off 🔴'}`, 'Auto Trade'),
