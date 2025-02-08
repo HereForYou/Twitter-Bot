@@ -166,7 +166,7 @@ export async function swapTokens(
     const quote = await getQuoteForSwap(inputAddr, outputAddr, amount, slippageBps);
     console.log('quote:', quote);
     if (quote.error) {
-      return { success: false, message: quote.error as string, signature: '' };
+      return { success: false, message: quote.errorCode as string, signature: '' };
     }
 
     const swapTransaction = await getSerializedTransaction(quote, keyPair.publicKey.toString(), priorityFee);
@@ -226,9 +226,13 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
 
     // If purchase failed
     if (result.success === false || !result.tokenOutDiff) {
-      await bot.telegram.sendMessage(user.tgId, `🔴 Buy failed. \nPriority Fee is too low. Please increase the fee.`, {
-        parse_mode: 'HTML',
-      });
+      await bot.telegram.sendMessage(
+        user.tgId,
+        `🔴 Buy failed. \n${result.message || 'Priority Fee is too low. Please increase the fee.'}`,
+        {
+          parse_mode: 'HTML',
+        }
+      );
       return;
     }
 

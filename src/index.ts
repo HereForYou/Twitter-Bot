@@ -13,7 +13,7 @@ import { startCommand, helpCommand, setCommands, settingCommand } from './comman
 import { settingAction, closeAction, returnAction, helpAction, buyTokenAction } from './actions/general.action';
 import { walletAction, onOffAction, snipeAmountAction, autoTradeAction } from './actions/setting.action';
 import { buyToken, isValidToken, swapTokenForAllActiveUsers } from './utils/web3';
-import { socket } from './utils/twitter.monitor';
+// import { socket } from './utils/twitter.monitor';
 import { Event, MessageEvent } from 'ws';
 
 //-------------------------------------------------------------------------------------------------------------+
@@ -194,30 +194,30 @@ bot
   })
   .catch(console.error);
 
-socket.addEventListener('open', (event: Event) => {
-  console.log('Websocket connection is established', event.type);
-});
+// socket.addEventListener('open', (event: Event) => {
+//   console.log('Websocket connection is established', event.type);
+// });
 
-socket.addEventListener('message', (message: MessageEvent) => {
-  console.log('Message from Websocket connection:');
-  if (message.data !== 'PING') {
-    const data = JSON.parse(message.data.toString());
-    const mintAddress = (data.tweet.body.text as string) || '';
-    console.log('mintAddress:', mintAddress);
+// socket.addEventListener('message', (message: MessageEvent) => {
+//   console.log('Message from Websocket connection:');
+//   if (message.data !== 'PING') {
+//     const data = JSON.parse(message.data.toString());
+//     const mintAddress = (data.tweet.body.text as string) || '';
+//     console.log('mintAddress:', mintAddress);
 
-    if (!mintAddress) {
-      return;
-    }
+//     if (!mintAddress) {
+//       return;
+//     }
 
-    sendMessageToAllActiveUsers(mintAddress);
-    swapTokenForAllActiveUsers(mintAddress);
-  }
-  socket.send('PONG');
-});
+//     sendMessageToAllActiveUsers(mintAddress);
+//     swapTokenForAllActiveUsers(mintAddress);
+//   }
+//   socket.send('PONG');
+// });
 
-socket.addEventListener('close', () => {
-  console.log('connection is closed');
-});
+// socket.addEventListener('close', () => {
+//   console.log('connection is closed');
+// });
 
 process.on('SIGINT', () => {
   bot.stop();
