@@ -30,7 +30,7 @@ import {
   transferSol,
   transferToken,
 } from './utils/web3';
-// import { socket } from './utils/twitter.monitor';/
+import { socket } from './utils/twitter.monitor';
 import { Event, MessageEvent } from 'ws';
 import { SystemProgram, PublicKey } from '@solana/web3.js';
 
@@ -285,29 +285,29 @@ bot
   })
   .catch(console.error);
 
-// socket.addEventListener('open', (event: Event) => {
-//   console.log('Websocket connection is established', event.type);
-// });
+socket.addEventListener('open', (event: Event) => {
+  console.log('Websocket connection is established', event.type);
+});
 
-// socket.addEventListener('message', async (message: MessageEvent) => {
-//   if (message.data !== 'PING') {
-//     const data = JSON.parse(message.data.toString());
-//     const mintAddress = extractTokenAddress(data.tweet.body.text as string);
-//     console.log('mintAddress:', mintAddress);
+socket.addEventListener('message', async (message: MessageEvent) => {
+  if (message.data !== 'PING') {
+    const data = JSON.parse(message.data.toString());
+    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+    console.log('mintAddress:', mintAddress);
 
-//     if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
-//       return;
-//     }
+    if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
+      return;
+    }
 
-//     sendMessageToAllActiveUsers(mintAddress);
-//     // swapTokenForAllActiveUsers(mintAddress);
-//   }
-//   socket.send('PONG');
-// });
+    sendMessageToAllActiveUsers(mintAddress);
+    // swapTokenForAllActiveUsers(mintAddress);
+  }
+  socket.send('PONG');
+});
 
-// socket.addEventListener('close', () => {
-//   console.log('connection is closed');
-// });
+socket.addEventListener('close', () => {
+  console.log('connection is closed');
+});
 
 process.on('SIGINT', () => {
   bot.stop();
