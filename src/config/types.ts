@@ -17,7 +17,6 @@ export interface TokenInfoType {
   address: string;
   decimals: number;
   risk: number;
-  price: any;
   poolAddress?: string;
 }
 

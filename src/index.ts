@@ -3,18 +3,36 @@ dotenv.config({
   path: './.env',
 });
 
-import { SOL_DECIMAL, bot } from './config/config';
+import { SOL_ADDRESS, SOL_DECIMAL, bot } from './config/config';
 import { User } from './models/user.model';
-import { extractTokenAddress, isNumber, sendMessageToAllActiveUsers } from './utils/functions';
+import { isNumber, isValidWalletAddress } from './utils/functions';
 import { settingText, tokenText } from './models/text.model';
 import { settingMarkUp, tokenMarkUp } from './models/markup.model';
-import { checkAction } from './utils/middleware';
+import { checkAction, checkUser } from './utils/middleware';
 import { startCommand, helpCommand, setCommands, settingCommand } from './commands/commands';
-import { settingAction, closeAction, returnAction, helpAction, buyTokenAction } from './actions/general.action';
+import {
+  settingAction,
+  closeAction,
+  returnAction,
+  helpAction,
+  buyTokenAction,
+  sellTokenAction,
+  transferTokenAction,
+} from './actions/general.action';
 import { walletAction, onOffAction, snipeAmountAction, autoTradeAction } from './actions/setting.action';
-import { buyToken, isValidToken, swapTokenForAllActiveUsers } from './utils/web3';
-import { socket } from './utils/twitter.monitor';
+import {
+  buyToken,
+  getBalanceOfWallet,
+  getTokenBalanceOfWallet,
+  getTokenInfo,
+  isValidToken,
+  sellToken,
+  transferSol,
+  transferToken,
+} from './utils/web3';
+// import { socket } from './utils/twitter.monitor';/
 import { Event, MessageEvent } from 'ws';
+import { SystemProgram, PublicKey } from '@solana/web3.js';
 
 //-------------------------------------------------------------------------------------------------------------+
 //                                             Set the commands                                                |
@@ -73,7 +91,7 @@ bot.on('text', async (ctx) => {
       ctx.session.state = '';
 
       // The part to buy token using X SOL
-    } else if (botState === 'Input X Amount') {
+    } else if (botState === 'Buy X Amount') {
       if (!isNumber(text)) {
         ctx.reply('Please enter the number.');
         return;
@@ -83,11 +101,70 @@ bot.on('text', async (ctx) => {
         ctx.reply('Pease enter the token address at first.');
         return;
       }
-      ctx.reply(`Transaction is pending ${text}`);
       buyToken(user, ctx.session.mint, Number(text) * SOL_DECIMAL);
       ctx.session.state = '';
 
       // The part to control the event of entering token address or invalid command
+    } else if (botState === 'Sell X %') {
+      if (!isNumber(text)) {
+        ctx.reply('Please enter the number.');
+        return;
+      }
+
+      if (!ctx.session.mint) {
+        ctx.reply('Pease enter the token address at first.');
+        return;
+      }
+
+      const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, ctx.session.mint);
+      const amount = Math.floor((balance * Number(text)) / 100);
+
+      sellToken(user, ctx.session.mint, amount);
+      ctx.session.state = '';
+
+      // The part to control the event of entering token address or invalid command
+    } else if (botState === 'Sell X Tokens') {
+      if (!isNumber(text)) {
+        ctx.reply('Please enter the number.');
+        return;
+      }
+
+      if (!ctx.session.mint) {
+        ctx.reply('Pease enter the token address at first.');
+        return;
+      }
+
+      const { decimals } = await getTokenInfo(ctx.session.mint);
+      const amount = Math.floor(Number(text) * 10 ** decimals);
+
+      sellToken(user, ctx.session.mint, amount);
+      ctx.session.state = '';
+
+      // The part to control the event of entering token address or invalid command
+    } else if (botState === 'Transfer Token') {
+      if (!isValidWalletAddress(text)) {
+        ctx.reply('Invalid wallet address');
+        return;
+      }
+
+      const mint = ctx.session.mint;
+      if (!mint) {
+        ctx.reply('Please enter the token address before withdraw');
+        return;
+      }
+
+      const { balanceInLamp, balanceNoLamp } = await getTokenBalanceOfWallet(user.wallet.publicKey, mint);
+      await transferToken(new PublicKey(mint), new PublicKey(text), balanceInLamp, balanceNoLamp, user);
+      ctx.session.state = '';
+    } else if (botState === 'Transfer SOL') {
+      if (!isValidWalletAddress(text)) {
+        ctx.reply('Invalid wallet address');
+        return;
+      }
+
+      const lamports = await getBalanceOfWallet(user.wallet.publicKey);
+      await transferSol(new PublicKey(text), lamports, user);
+      ctx.session.state = '';
     } else {
       // If it is invalid command
       if (text.startsWith('/')) {
@@ -105,7 +182,7 @@ bot.on('text', async (ctx) => {
       }
 
       ctx.session.mint = text;
-      await ctx.reply(tokenText(text), tokenMarkUp(user));
+      await ctx.reply(await tokenText(text, user.wallet.publicKey), tokenMarkUp(user));
     }
   } catch (error) {
     console.error('Error while on text:', error);
@@ -126,6 +203,20 @@ bot.on('text', async (ctx) => {
 bot.action('Close', (ctx, next) => checkAction(ctx, next, 'Close'), closeAction);
 
 bot.action(/^Buy (default|\d+(\.\d+)?|X) SOL$/, (ctx, next) => checkAction(ctx, next, 'Buy X SOL'), buyTokenAction);
+
+bot.action(
+  /^Sell (\d+|X) (%|Tokens)$/,
+  (ctx, next) => checkAction(ctx, next, 'Sell X SOL'),
+  checkUser,
+  sellTokenAction
+);
+
+bot.action(
+  ['Transfer Token', 'Transfer SOL'],
+  (ctx, next) => checkAction(ctx, next, ctx.match[0]),
+  checkUser,
+  transferTokenAction
+);
 
 //---------------------------------------------------------------------+
 //                      Actions on Start page                          |
@@ -194,29 +285,29 @@ bot
   })
   .catch(console.error);
 
-socket.addEventListener('open', (event: Event) => {
-  console.log('Websocket connection is established', event.type);
-});
+// socket.addEventListener('open', (event: Event) => {
+//   console.log('Websocket connection is established', event.type);
+// });
 
-socket.addEventListener('message', async (message: MessageEvent) => {
-  if (message.data !== 'PING') {
-    const data = JSON.parse(message.data.toString());
-    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
-    console.log('mintAddress:', mintAddress);
+// socket.addEventListener('message', async (message: MessageEvent) => {
+//   if (message.data !== 'PING') {
+//     const data = JSON.parse(message.data.toString());
+//     const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+//     console.log('mintAddress:', mintAddress);
 
-    if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
-      return;
-    }
+//     if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
+//       return;
+//     }
 
-    sendMessageToAllActiveUsers(mintAddress);
-    // swapTokenForAllActiveUsers(mintAddress);
-  }
-  socket.send('PONG');
-});
+//     sendMessageToAllActiveUsers(mintAddress);
+//     // swapTokenForAllActiveUsers(mintAddress);
+//   }
+//   socket.send('PONG');
+// });
 
-socket.addEventListener('close', () => {
-  console.log('connection is closed');
-});
+// socket.addEventListener('close', () => {
+//   console.log('connection is closed');
+// });
 
 process.on('SIGINT', () => {
   bot.stop();

@@ -22,15 +22,12 @@ export const settingMarkUp = async (user: UserType) => {
       reply_markup: Markup.inlineKeyboard([
         [Markup.button.callback(`💳 Wallet (${balance / SOL_DECIMAL})`, 'Wallet')],
         [
-          Markup.button.callback(
-            `${user.botStatus ? '🆕 Tweet Alarm On 🟢' : '🆕 Tweet Alarm Off 🔴'}`,
-            'On Off'
-          ),
+          Markup.button.callback(`${user.botStatus ? '🆕 Tweet Alarm On 🟢' : '🆕 Tweet Alarm Off 🔴'}`, 'On Off'),
           Markup.button.callback(`${user.autoTrade ? '⚙ Auto Trade On 🟢' : '⚙ Auto Trade Off 🔴'}`, 'Auto Trade'),
         ],
+        [Markup.button.callback(`💵 Amount: ${user.snipeAmount} SOL`, 'Snipe Amount')],
         [
-          Markup.button.callback(`💵 Amount: ${user.snipeAmount} SOL`, 'Snipe Amount'),
-          Markup.button.callback(`💵 Priority Fee: ${user.priorityFee}`, 'Priority Fee'),
+          Markup.button.callback(`💵 Priority Fee: ${user.priorityFee} SOL`, 'Priority Fee'),
           Markup.button.callback(`🆚 Slippage Bps: ${user.slippageBps}`, 'Slippage Bps'),
         ],
         [Markup.button.callback('🔙 Back', 'Return'), Markup.button.callback('✖ Close', 'Close')],
@@ -66,8 +63,34 @@ export const tokenMarkUp = (user: UserType) => {
         Markup.button.callback(`Buy 0.5 SOL`, 'Buy 0.5 SOL'),
         Markup.button.callback(`Buy 0.1 SOL`, 'Buy 0.1 SOL'),
       ],
+      [
+        Markup.button.callback('Transfer Token', 'Transfer Token'),
+        Markup.button.callback('Transfer SOL', 'Transfer SOL'),
+      ],
+      ...sellPart,
       [Markup.button.callback('🔙 Back', 'Return'), Markup.button.callback('✖ Close', 'Close')],
     ]).reply_markup,
     parse_mode: 'HTML' as ParseMode,
   };
 };
+
+export const sellMarkUp = () => {
+  return {
+    reply_markup: Markup.inlineKeyboard([...sellPart]).reply_markup,
+    parse_mode: 'HTML' as ParseMode,
+  };
+};
+
+const sellPart = [
+  [
+    Markup.button.callback('25%', 'Sell 25 %'),
+    Markup.button.callback('50%', 'Sell 50 %'),
+    Markup.button.callback('75%', 'Sell 75 %'),
+    Markup.button.callback('100%', 'Sell 100 %'),
+  ],
+  [
+    // Markup.button.callback('Sell X SOL', 'Sell X SOL'),
+    Markup.button.callback('Sell X Tokens', 'Sell X Tokens'),
+    Markup.button.callback('Sell X %', 'Sell X %'),
+  ],
+];

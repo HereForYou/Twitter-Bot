@@ -68,7 +68,7 @@ const UserSchema = new Schema({
   },
   priorityFee: {
     type: Number,
-    default: 200000,
+    default: 0.0002,
   },
   slippageBps: {
     type: Number,

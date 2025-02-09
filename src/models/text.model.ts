@@ -2,6 +2,7 @@ import { SOL_DECIMAL } from '../config/config';
 import { UserType } from './user.model';
 import { roundToSpecificDecimal } from '../utils/functions';
 import { TokenInfoType } from '../config/types';
+import { getTokenBalanceOfWallet, getTokenInfo } from '../utils/web3';
 
 /**
  * The text when start command is inputed
@@ -25,7 +26,7 @@ export const newUserText = (user: UserType) => {
       `⚠ Keep your <i>private keys</i> <b>safe</b>\n` +
       `💳 Public Key: <code>${user.wallet.publicKey}</code>\n` +
       `🔑 Private Key: <code>${user.wallet.privateKey}</code>\n`
-    )
+    );
   } catch (error) {
     console.error('Error while getting newUserText:', error);
     throw new Error('Failed to create newUser text.');
@@ -74,24 +75,41 @@ export const settingText =
   `   - Set the time when you want the bot to stop trading.\n\n` +
   `🔧 <b>Please adjust these settings according to your trading strategy and preferences.</b>`;
 
-export const buySuccessText = (tokenInfo: TokenInfoType, signature: string, solAmount: number, tokenAmount: number) => {
+export const buySuccessText = async (
+  user: UserType,
+  token: TokenInfoType,
+  signature: string,
+  solAmount: number,
+  tokenAmount: number
+) => {
+  const { balanceNoLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, token.address);
   return (
-    `🟢 <b>Buying <b>${tokenInfo.symbol || tokenInfo.name}</b> is success</b>.\n` +
-    `You bought <b>${roundToSpecificDecimal(tokenAmount, 4)}</b>` +
-    ` ${tokenInfo.symbol || tokenInfo.name} using <b>${solAmount}</b> SOL.\n` +
+    `🟢 <b>Buying <b>${token.symbol || token.name}</b> is success! 🟢</b>\n` +
+    `<code>${token.address}</code>\n` +
+    `You bought <b>${roundToSpecificDecimal(tokenAmount, token.decimals)}</b>` +
+    ` ${token.symbol || token.name} using <b>${solAmount}</b> SOL.\n` +
+    `💵 Balance: ${balance}\n` +
     `📝<a href='https://solscan.io/tx/${signature}'>Transaction</a>`
   );
 };
 
-export const sellSuccessText = (token: any, earn: number, pl: number, signature: string) => {
+export const sellSuccessText = async (user: UserType, token: TokenInfoType, earn: number, signature: string) => {
+  const { balanceNoLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, token.address);
   return (
-    `🔴 <b>Selling ${token.symbol || token.name} was success! 🟢</b>\n` +
+    `🔴 <b>Selling ${token.symbol || token.name} is success! 🟢</b>\n` +
+    `<code>${token.address}</code>\n` +
     `💵 You got <b>${roundToSpecificDecimal(earn, 4)}</b> SOL\n` +
-    `${pl > 0 ? '🟢 Profit' : '🔴 Loss'}: <b>${pl}</b> SOL\n` +
+    `💵 Balance: ${balance}\n` +
     `📝 <a href='https://solscan.io/tx/${signature}'>Transaction</a>`
   );
 };
 
-export function tokenText(mintAddress: string) {
-  return `<code>${mintAddress}</code>`;
+export async function tokenText(mintAddress: string, pubKey: string) {
+  const { balanceNoLamp: balance } = await getTokenBalanceOfWallet(pubKey, mintAddress);
+  const token = await getTokenInfo(mintAddress);
+  return (
+    `<b>Name</b>: ${token?.name} (${token?.symbol})\n` +
+    `<b>CA</b>: <code>${mintAddress}</code>\n` +
+    `<b>Balance</b>: ${balance}`
+  );
 }

@@ -3,7 +3,7 @@ import { startText, helpText, settingText } from '../models/text.model';
 import { settingMarkUp, startMarkUp, helpMarkup } from '../models/markup.model';
 import { MyContext } from '../config/types';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
-import { buyToken } from '../utils/web3';
+import { buyToken, getTokenBalanceOfWallet, sellToken } from '../utils/web3';
 import { SOL_DECIMAL } from '../config/config';
 
 /**
@@ -101,16 +101,62 @@ export const buyTokenAction = async (ctx: MyContext) => {
       tradeAmount = user.snipeAmount * SOL_DECIMAL;
     } else if (amount === 'X') {
       await ctx.reply('Please enter the amount you want to buy in SOL.');
-      ctx.session.state = 'Input X Amount';
+      ctx.session.state = 'Buy X Amount';
       return;
     } else {
       tradeAmount = Number(amount) * SOL_DECIMAL;
     }
 
-    ctx.reply(`Transaction is pending now ${tradeAmount / SOL_DECIMAL}`);
     buyToken(user, ctx.session.mint, tradeAmount);
     ctx.session.state = '';
   } catch (error) {
     console.error('Error while helpAction:', error);
   }
 };
+
+export async function sellTokenAction(ctx: MyContext) {
+  try {
+    const callbackData = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
+    const tgId = ctx.chat?.id;
+
+    const user = await User.findOne({ tgId });
+    if (!user) {
+      return;
+    }
+
+    const [_, ratio, unit] = callbackData.split(/\s+/);
+    const possibleRatios = ['25', '50', '75', '100'];
+    if (possibleRatios.includes(ratio)) {
+      const mint = ctx.session.mint;
+      if (!mint) {
+        ctx.session.state = '';
+        return;
+      }
+
+      const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, mint);
+      const amount = Math.floor((balance * Number(ratio)) / 100);
+
+      await sellToken(user, mint, amount);
+      ctx.session.state = '';
+    } else if (unit === '%') {
+      await ctx.reply('Please enter the ratio you want to sell.');
+      ctx.session.state = 'Sell X %';
+    } else {
+      await ctx.reply('Please enter the amount you want to sell.');
+      ctx.session.state = 'Sell X Tokens';
+    }
+  } catch (error) {
+    ctx.session.state = '';
+    console.error(error);
+  }
+}
+
+export async function transferTokenAction(ctx: MyContext) {
+  const callbackData = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
+  try {
+    ctx.reply('Input the wallet address to withdraw.');
+    ctx.session.state = callbackData;
+  } catch (error) {
+    console.error(error);
+  }
+}
