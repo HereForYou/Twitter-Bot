@@ -5,7 +5,7 @@ dotenv.config({
 
 import { SOL_ADDRESS, SOL_DECIMAL, bot } from './config/config';
 import { User } from './models/user.model';
-import { isNumber, isValidWalletAddress } from './utils/functions';
+import { extractTokenAddress, isNumber, isValidWalletAddress, sendMessageToAllActiveUsers } from './utils/functions';
 import { settingText, tokenText } from './models/text.model';
 import { settingMarkUp, tokenMarkUp } from './models/markup.model';
 import { checkAction, checkUser } from './utils/middleware';
