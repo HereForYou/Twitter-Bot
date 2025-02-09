@@ -2,7 +2,6 @@ import {
   Keypair,
   VersionedTransaction,
   PublicKey,
-  PartiallyDecodedInstruction,
   TransactionMessage,
   ComputeBudgetProgram,
   TransactionInstruction,
@@ -10,21 +9,15 @@ import {
 } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
 import { UserType } from '../models/user.model';
-import { TokenInfoType } from '../config/types';
 import { User } from '../models/user.model';
 import {
   connection,
   bot,
-  INSTRUCTION_NAME,
-  RAYDIUM,
   SOL_ADDRESS,
-  sigHistory,
-  RAYDIUM_PUBLIC_KEY,
   SOL_DECIMAL,
   JUPITER_FEE_ACCOUNT,
 } from '../config/config';
 import { buySuccessText, sellSuccessText } from '../models/text.model';
-import { sendMessageToAllActiveUsers, addItemToArray } from './functions';
 import { getQuoteForSwap, getSerializedTransaction, getTokenPrice } from './jupiter';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import {
@@ -33,7 +26,6 @@ import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
   getAssociatedTokenAddressSync,
-  getOrCreateAssociatedTokenAccount,
 } from '@solana/spl-token';
 import { sellMarkUp, tokenMarkUp } from '../models/markup.model';
 
