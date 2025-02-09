@@ -3,7 +3,7 @@ dotenv.config({
   path: './.env',
 });
 
-import { SOL_ADDRESS, SOL_DECIMAL, bot } from './config/config';
+import { SOL_DECIMAL, bot } from './config/config';
 import { User } from './models/user.model';
 import { extractTokenAddress, isNumber, isValidWalletAddress, sendMessageToAllActiveUsers } from './utils/functions';
 import { settingText, tokenText } from './models/text.model';
@@ -32,7 +32,7 @@ import {
 } from './utils/web3';
 import { socket } from './utils/twitter.monitor';
 import { Event, MessageEvent } from 'ws';
-import { SystemProgram, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 //-------------------------------------------------------------------------------------------------------------+
 //                                             Set the commands                                                |
