@@ -19,6 +19,12 @@ interface Wallet {
   amount: number;
 }
 
+interface Twitter {
+  id: string;
+  handle: string;
+  type: boolean;
+}
+
 // Define the User interface
 export interface UserType extends Document {
   tgId: string;
@@ -33,6 +39,7 @@ export interface UserType extends Document {
   simulationMode?: boolean;
   autoTrade: boolean;
   tokens: Token[];
+  twitterProfiles: Twitter[];
 }
 
 const UserSchema = new Schema({
@@ -127,6 +134,20 @@ const UserSchema = new Schema({
       risk: {
         type: Number,
         default: 0,
+      },
+    },
+  ],
+  twitterProfiles: [
+    {
+      id: {
+        type: String,
+      },
+      handle: {
+        type: String,
+      },
+      type: {
+        type: Boolean,
+        default: false,
       },
     },
   ],

@@ -30,9 +30,11 @@ import {
   transferSol,
   transferToken,
 } from './utils/web3';
-import { socket } from './utils/twitter.monitor';
-import { Event, MessageEvent } from 'ws';
+// import { highSpeedSocket } from './utils/twitter.monitor';
+// import { Event, MessageEvent } from 'ws';
 import { PublicKey } from '@solana/web3.js';
+import { addOrRemoveProfileAction, twitterAction } from './actions/twitter.action';
+import { addProfile, removeProfile } from './utils/twitter.monitor';
 
 //-------------------------------------------------------------------------------------------------------------+
 //                                             Set the commands                                                |
@@ -165,6 +167,29 @@ bot.on('text', async (ctx) => {
       const lamports = await getBalanceOfWallet(user.wallet.publicKey);
       await transferSol(new PublicKey(text), lamports, user);
       ctx.session.state = '';
+    } else if (botState === 'Add Profile') {
+      if (text.split(/\s+/).length !== 2) {
+        await ctx.reply('Invalid format');
+        return;
+      }
+
+      const [id, type] = text.split(/\s+/);
+      if (!isNumber(type)) {
+        await ctx.reply('Invalid format');
+        return;
+      }
+
+      let data;
+
+      if (isNumber(id)) {
+        data = { id: id };
+      } else {
+        data = { handle: id };
+      }
+
+      const success = await addProfile(data, Number(type));
+    } else if (botState === 'Remove Profile') {
+      const success = await removeProfile(text, 0);
     } else {
       // If it is invalid command
       if (text.startsWith('/')) {
@@ -233,6 +258,19 @@ bot.action('Help', (ctx, next) => checkAction(ctx, next, 'Help'), helpAction);
 bot.action('Setting', (ctx, next) => checkAction(ctx, next, 'Setting'), settingAction);
 
 //---------------------------------------------------------------------+
+//                       Actions For Twitter                           |
+//---------------------------------------------------------------------+
+
+bot.action('Twitter', (ctx, next) => checkAction(ctx, next, 'Twitter'), checkUser, twitterAction);
+
+bot.action(
+  ['Add Profile', 'Remove Profile'],
+  (ctx, next) => checkAction(ctx, next, ctx.match[0]),
+  checkUser,
+  addOrRemoveProfileAction
+);
+
+//---------------------------------------------------------------------+
 //                       Actions on Setting page                       |
 //---------------------------------------------------------------------+
 
@@ -285,29 +323,29 @@ bot
   })
   .catch(console.error);
 
-socket.addEventListener('open', (event: Event) => {
-  console.log('Websocket connection is established', event.type);
-});
+// highSpeedSocket.addEventListener('open', (event: Event) => {
+//   console.log('Websocket connection is established', event.type);
+// });
 
-socket.addEventListener('message', async (message: MessageEvent) => {
-  if (message.data !== 'PING') {
-    const data = JSON.parse(message.data.toString());
-    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
-    console.log('mintAddress:', mintAddress);
+// highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
+//   if (message.data !== 'PING') {
+//     const data = JSON.parse(message.data.toString());
+//     const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+//     console.log('mintAddress:', mintAddress);
 
-    if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
-      return;
-    }
+//     if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
+//       return;
+//     }
 
-    sendMessageToAllActiveUsers(mintAddress);
-    // swapTokenForAllActiveUsers(mintAddress);
-  }
-  socket.send('PONG');
-});
+//     sendMessageToAllActiveUsers(mintAddress);
+//     // swapTokenForAllActiveUsers(mintAddress);
+//   }
+//   highSpeedSocket.send('PONG');
+// });
 
-socket.addEventListener('close', () => {
-  console.log('connection is closed');
-});
+// highSpeedSocket.addEventListener('close', () => {
+//   console.log('connection is closed');
+// });
 
 process.on('SIGINT', () => {
   bot.stop();

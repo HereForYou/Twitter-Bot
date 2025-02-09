@@ -25,10 +25,15 @@ export const settingMarkUp = async (user: UserType) => {
           Markup.button.callback(`${user.botStatus ? '🆕 Tweet Alarm On 🟢' : '🆕 Tweet Alarm Off 🔴'}`, 'On Off'),
           Markup.button.callback(`${user.autoTrade ? '⚙ Auto Trade On 🟢' : '⚙ Auto Trade Off 🔴'}`, 'Auto Trade'),
         ],
-        [Markup.button.callback(`💵 Amount: ${user.snipeAmount} SOL`, 'Snipe Amount')],
+        [Markup.button.callback(`💵 Trade Amount: ${user.snipeAmount} SOL`, 'Snipe Amount')],
         [
           Markup.button.callback(`💵 Priority Fee: ${user.priorityFee} SOL`, 'Priority Fee'),
           Markup.button.callback(`🆚 Slippage Bps: ${user.slippageBps}`, 'Slippage Bps'),
+        ],
+        [Markup.button.callback(`🦜 Twitter`, 'Twitter')],
+        [
+          Markup.button.callback('➕ Add Profile', 'Add Profile'),
+          Markup.button.callback('➖ Remove Profile', 'Remove Profile'),
         ],
         [Markup.button.callback('🔙 Back', 'Return'), Markup.button.callback('✖ Close', 'Close')],
       ]).reply_markup,
@@ -38,6 +43,16 @@ export const settingMarkUp = async (user: UserType) => {
     console.error('Error while settingMarkUp:', error);
     throw new Error('Failed to create markup for user settings.');
   }
+};
+
+export const twitterMarkUp = {
+  reply_markup: Markup.inlineKeyboard([
+    [
+      Markup.button.callback('➕ Add Profile', 'Add Profile'),
+      Markup.button.callback('➖ Remove Profile', 'Remove Profile'),
+    ],
+  ]).reply_markup,
+  parse_mode: 'HTML' as ParseMode,
 };
 
 export const closeMarkUp = Markup.inlineKeyboard([[Markup.button.callback('✖ Close', 'Close')]]);
