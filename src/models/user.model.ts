@@ -22,7 +22,7 @@ interface Wallet {
 interface Twitter {
   id: string;
   handle: string;
-  type: boolean;
+  type: number;
 }
 
 // Define the User interface
@@ -146,8 +146,8 @@ const UserSchema = new Schema({
         type: String,
       },
       type: {
-        type: Boolean,
-        default: false,
+        type: Number,
+        default: 0,
       },
     },
   ],

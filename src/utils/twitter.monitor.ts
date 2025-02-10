@@ -2,11 +2,8 @@ import Websocket from 'ws';
 
 const apiKeys = [process.env.HIGH_SPEED_TWEETER_API_KEY || '', process.env.NORMAL_SPEED_TWEETER_API_KEY || ''];
 
-const highSpeedEndpoint = `wss://twitter-api.axsys.us/v1/events?authorization=${apiKeys[0]}`;
-const normalSpeedEndpoint = `wss://twitter-api.axsys.us/v1/events?authorization=${apiKeys[1]}`;
-
-export const highSpeedSocket = new Websocket(highSpeedEndpoint);
-export const normalSpeedSocket = new Websocket(normalSpeedEndpoint);
+export const highSpeedSocket = new Websocket(`wss://twitter-api.axsys.us/v1/events?authorization=${apiKeys[0]}`);
+export const normalSpeedSocket = new Websocket(`wss://twitter-api.axsys.us/v1/events?authorization=${apiKeys[1]}`);
 
 export async function addProfile(data: any, type: number) {
   try {
@@ -22,10 +19,14 @@ export async function addProfile(data: any, type: number) {
 
     const res = await response.json();
     console.log('add profile', res);
-    return true;
-  } catch (error) {
+
+    if (res.code) {
+      return { success: false, message: res.message, data: undefined };
+    }
+    return { success: true, data: { id: res.user.id, handle: res.user.handle, type }, message: undefined };
+  } catch (error: any) {
     console.error(error);
-    return false;
+    return { success: false, message: error.message || 'Unexpected error', data: undefined };
   }
 }
 
