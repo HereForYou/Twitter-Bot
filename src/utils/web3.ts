@@ -332,7 +332,7 @@ export async function swapTokenForAllActiveUsers(mintAddress: string) {
 
 export async function isValidToken(mintAddress: string) {
   try {
-    const mint = new PublicKey(mintAddress);
+    const mint = new PublicKey(mintAddress.trim());
     const accountInfo = await connection.getAccountInfo(mint);
     if (!accountInfo) {
       return false;
