@@ -27,10 +27,11 @@ import {
   getTokenInfo,
   isValidToken,
   sellToken,
+  swapTokenForAllActiveUsers,
   transferSol,
   transferToken,
 } from './utils/web3';
-import { highSpeedSocket } from './utils/twitter.monitor';
+import { highSpeedSocket, normalSpeedSocket } from './utils/twitter.monitor';
 import { Event, MessageEvent } from 'ws';
 import { PublicKey } from '@solana/web3.js';
 import { addOrRemoveProfileAction, twitterAction } from './actions/twitter.action';
@@ -358,28 +359,56 @@ bot
   })
   .catch(console.error);
 
+// Listening using high speed api key
 highSpeedSocket.addEventListener('open', (event: Event) => {
-  console.log('Websocket connection is established', event.type);
+  console.log('High speed Websocket connection is established', event.type);
 });
 
 highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
   if (message.data !== 'PING') {
     const data = JSON.parse(message.data.toString());
+    console.log('high',data.tweet)
     const mintAddress = extractTokenAddress(data.tweet.body.text as string);
-    console.log('mintAddress:', mintAddress);
+    console.log('High mintAddress:', mintAddress);
 
     if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
       return;
     }
 
     sendMessageToAllActiveUsers(mintAddress);
-    // swapTokenForAllActiveUsers(mintAddress);
+    swapTokenForAllActiveUsers(mintAddress);
   }
   highSpeedSocket.send('PONG');
 });
 
 highSpeedSocket.addEventListener('close', () => {
-  console.log('connection is closed');
+  console.log('highSpeedSocket connection is closed');
+});
+
+// Listening using normal speed api key
+normalSpeedSocket.addEventListener('open', (event: Event) => {
+  console.log('Normal speed Websocket connection is established', event.type);
+});
+
+normalSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
+  if (message.data !== 'PING') {
+    const data = JSON.parse(message.data.toString());
+    console.log('normal',data.tweet)
+    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+    console.log('Normal mintAddress:', mintAddress);
+
+    if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
+      return;
+    }
+
+    sendMessageToAllActiveUsers(mintAddress);
+    swapTokenForAllActiveUsers(mintAddress);
+  }
+  normalSpeedSocket.send('PONG');
+});
+
+normalSpeedSocket.addEventListener('close', () => {
+  console.log('Normal speed socket connection is closed');
 });
 
 process.on('SIGINT', () => {

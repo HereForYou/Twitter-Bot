@@ -6,6 +6,7 @@ import {
   ComputeBudgetProgram,
   TransactionInstruction,
   SystemProgram,
+  ParsedAccountData,
 } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
 import { UserType } from '../models/user.model';
@@ -18,7 +19,7 @@ import {
   JUPITER_FEE_ACCOUNT,
 } from '../config/config';
 import { buySuccessText, sellSuccessText } from '../models/text.model';
-import { getQuoteForSwap, getSerializedTransaction, getTokenPrice } from './jupiter';
+import { getQuoteForSwap, getSerializedTransaction, getTokenPrice, getTradeSize } from './jupiter';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import {
   TOKEN_2022_PROGRAM_ID,
@@ -89,7 +90,7 @@ export const generateWallet = async () => {
   }
 };
 
-export async function getTokenDiffFromTransaction(signature: string, tokenIn: string, tokenOut: string) {
+export async function getTokenDiffFromTransaction(signature: string, tokenIn: string, tokenOut: string, source: string) {
   try {
     const transaction = await connection.getParsedTransaction(signature, {
       commitment: 'confirmed',
@@ -98,22 +99,23 @@ export async function getTokenDiffFromTransaction(signature: string, tokenIn: st
 
     const postTokenBalance = transaction?.meta?.postTokenBalances;
     const preTokenBalance = transaction?.meta?.preTokenBalances;
+    console.log(postTokenBalance)
 
-    const diff = Math.abs(
-      (postTokenBalance?.find((post) => post.mint === tokenIn && post.owner !== JUPITER_FEE_ACCOUNT)?.uiTokenAmount
+    const tokenInDiff = Math.abs(
+      (postTokenBalance?.find((post) => post.mint === tokenIn && post.owner === source)?.uiTokenAmount
         .uiAmount || 0) -
-        (preTokenBalance?.find((pre) => pre.mint === tokenIn && pre.owner !== JUPITER_FEE_ACCOUNT)?.uiTokenAmount
+        (preTokenBalance?.find((pre) => pre.mint === tokenIn && pre.owner === source)?.uiTokenAmount
           .uiAmount || 0)
     );
 
-    const solDiff = Math.abs(
-      (postTokenBalance?.find((post) => post.mint === tokenOut && post.owner !== JUPITER_FEE_ACCOUNT)?.uiTokenAmount
+    const tokenOutDiff = Math.abs(
+      (postTokenBalance?.find((post) => post.mint === tokenOut && post.owner === source)?.uiTokenAmount
         .uiAmount || 0) -
-        (preTokenBalance?.find((pre) => pre.mint === tokenOut && pre.owner !== JUPITER_FEE_ACCOUNT)?.uiTokenAmount
+        (preTokenBalance?.find((pre) => pre.mint === tokenOut && pre.owner === source)?.uiTokenAmount
           .uiAmount || 0)
     );
 
-    return { tokenInDiff: diff, tokenOutDiff: solDiff };
+    return { tokenInDiff: tokenInDiff, tokenOutDiff: tokenOutDiff };
   } catch (error) {
     console.error(error);
     return { tokenInDiff: 0, tokenOutDiff: 0 };
@@ -169,7 +171,8 @@ export async function swapTokens(
   amount: number,
   secretKey: string,
   priorityFee: number,
-  slippageBps: number
+  slippageBps: number,
+  source: string
 ) {
   try {
     const keyPair = Keypair.fromSecretKey(bs58.decode(secretKey));
@@ -197,14 +200,14 @@ export async function swapTokens(
     );
 
     if (result.success === true) {
-      const { tokenInDiff, tokenOutDiff } = await getTokenDiffFromTransaction(result.signature, inputAddr, outputAddr);
-      console.log('tokenOutDiff', tokenOutDiff);
+      const { diffSol, diffOther } = await getTradeSize(result.signature);
+      console.log('tokenOutDiff', diffSol, diffOther);
       return {
         success: true,
         signature: result.signature,
         message: '',
-        tokenInDiff,
-        tokenOutDiff,
+        tokenInDiff: inputAddr === SOL_ADDRESS ? diffSol : diffOther,
+        tokenOutDiff: inputAddr !== SOL_ADDRESS ? diffSol : diffOther,
       };
     } else {
       return { success: false, message: 'Transaction is expired.', signature: '' };
@@ -237,7 +240,8 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
       amount,
       user.wallet.privateKey,
       Math.floor(user.priorityFee * SOL_DECIMAL),
-      user.slippageBps
+      user.slippageBps,
+      user.wallet.publicKey
     );
 
     // If purchase failed
@@ -283,7 +287,8 @@ export async function sellToken(user: UserType, mintAddress: string, amount: num
       amount,
       user.wallet.privateKey,
       Math.floor(user.priorityFee * SOL_DECIMAL),
-      user.slippageBps
+      user.slippageBps,
+      user.wallet.publicKey
     );
 
     // If purchase failed
@@ -334,6 +339,7 @@ export async function isValidToken(mintAddress: string) {
     return false;
   } catch (error) {
     console.error(error);
+    return false
   }
 }
 
@@ -465,5 +471,23 @@ export async function transferSol(toPubkey: PublicKey, _balInLamp: number, user:
     );
   } catch (error) {
     console.error(error);
+  }
+}
+
+export async function getTokenMintAddress(source: string, destination: string) {
+  try {
+    let accountInfo = await connection.getParsedAccountInfo(new PublicKey(source));
+    if (!accountInfo.value) accountInfo = await connection.getParsedAccountInfo(new PublicKey(destination));
+    const tokenInfo = (accountInfo.value?.data as ParsedAccountData).parsed?.info;
+    const tokenInfor = await getTokenInfo(tokenInfo?.mint);
+    const symbol =
+      tokenInfor?.address !== SOL_ADDRESS.toString() && tokenInfor?.symbol === 'SOL' ? 'SPL Token' : tokenInfor?.symbol;
+    return {
+      mint: tokenInfo?.mint || null,
+      decimals: Number(tokenInfo?.tokenAmount?.decimals),
+      symbol,
+    };
+  } catch (error: any) {
+    throw new Error(error.message || 'Unexpected error while fetching token mint address.');
   }
 }

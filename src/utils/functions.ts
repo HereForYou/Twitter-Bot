@@ -35,7 +35,7 @@ export async function sendMessageToAllActiveUsers(mintAddress: string) {
 }
 
 // Round up the number to specific decimal
-export function roundToSpecificDecimal(num: number, decimal = 0) {
+export function roundToSpecificDecimal(num: number, decimal = 9) {
   const decimals = 10 ** decimal;
   return Math.floor(num * decimals) / decimals;
 }

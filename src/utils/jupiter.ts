@@ -1,4 +1,10 @@
+import { ParsedInstruction, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey } from '@solana/web3.js';
 import fetch from 'cross-fetch';
+import { getTokenMintAddress } from './web3';
+import { connection, SOL_ADDRESS, SOL_DECIMAL } from '../config/config';
+import { roundToSpecificDecimal } from './functions';
+
+const JUPITER_AGGREGATOR_V6 = new PublicKey('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4');
 
 /**
  *
@@ -67,3 +73,79 @@ export async function getTokenPrice(token: string) {
     throw new Error('Error while getTokenPrice');
   }
 }
+
+function getJupiterTransfers(transaction: ParsedTransactionWithMeta) {
+  try {
+    const instructions = transaction.transaction.message.instructions as PartiallyDecodedInstruction[];
+    const swapIxIdx = instructions.findIndex((ix) => {
+      return ix.programId.equals(JUPITER_AGGREGATOR_V6);
+    });
+
+    if (swapIxIdx === -1) {
+      throw new Error('Non Jupiter Swap');
+    }
+
+    const transfers: any[] = [];
+    transaction.meta?.innerInstructions?.forEach((instruction) => {
+      if (instruction.index <= swapIxIdx) {
+        (instruction.instructions as ParsedInstruction[]).forEach((ix) => {
+          if (ix.parsed?.type === 'transfer' && ix.parsed.info.amount) {
+            transfers.push({
+              amount: ix.parsed.info.amount,
+              source: ix.parsed.info.source,
+              destination: ix.parsed.info.destination,
+            });
+          } else if (ix.parsed?.type === 'transferChecked' && ix.parsed.info.tokenAmount.amount) {
+            transfers.push({
+              amount: ix.parsed.info.tokenAmount.amount,
+              source: ix.parsed.info.source,
+              destination: ix.parsed.info.destination,
+            });
+          }
+        });
+      }
+    });
+
+    if (transfers.length < 2) {
+      throw new Error('Invalid Jupiter Swap');
+    }
+
+    return [transfers[0], transfers[transfers.length - 1]];
+  } catch (error: any) {
+    throw new Error(error.message || 'Unexpected error while extracting transfers from jupiter dex.');
+  }
+}
+
+export async function getTradeSize(signature: string) {
+  console.log('signature', signature)
+  const transaction = await connection.getParsedTransaction(signature, {commitment: 'confirmed', maxSupportedTransactionVersion: 0})
+  if (!transaction) {
+    throw new Error('Unexpected error.');
+  }
+  try {
+    const transfers = getJupiterTransfers(transaction);
+    const [tokenIn, tokenOut] = await Promise.all([
+      getTokenMintAddress(transfers[0].source, transfers[0].destination),
+      getTokenMintAddress(transfers[1].source, transfers[1].destination),
+    ]);
+
+    const diffSol =
+      tokenIn?.mint === SOL_ADDRESS
+        ? (transfers[0].amount as number) / SOL_DECIMAL
+        : (transfers[1].amount as number) / SOL_DECIMAL;
+
+    const diffOther =
+      tokenIn?.mint === SOL_ADDRESS.toString()
+        ? (transfers[1].amount as number) / 10 ** (tokenOut?.decimals || 0)
+        : (transfers[0].amount as number) / 10 ** (tokenIn?.decimals || 0);
+
+    return {
+      diffSol: Math.abs(roundToSpecificDecimal(diffSol)),
+      diffOther: Math.abs(roundToSpecificDecimal(diffOther)),
+      isBuy: diffSol > 0 ? true : false,
+    };
+  } catch (error) {
+    throw new Error('Error while caculating trade size.')
+  }
+}
+
