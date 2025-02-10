@@ -1,4 +1,5 @@
 import Websocket from 'ws';
+import { extractProfiles } from './functions';
 
 const apiKeys = [process.env.HIGH_SPEED_TWEETER_API_KEY || '', process.env.NORMAL_SPEED_TWEETER_API_KEY || ''];
 
@@ -10,7 +11,7 @@ export async function addProfile(data: any, type: number) {
     const url = 'https://twitter-api.axsys.us/v1/watched';
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         Authorization: apiKeys[type],
       },
@@ -48,4 +49,38 @@ export async function removeProfile(id: string, type: number) {
     console.error(error);
     return false;
   }
+}
+
+export async function getAllProfiles() {
+  try {
+    const highRes = await fetch('https://twitter-api.axsys.us/v1/watched', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: apiKeys[0],
+      },
+    });
+    const highData = await highRes.json();
+
+    const normalRes = await fetch('https://twitter-api.axsys.us/v1/watched', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: apiKeys[1],
+      },
+    });
+    const normalData = await normalRes.json();
+
+    return {
+      high: { apiKey: apiKeys[0], data: extractProfiles(highData.watched) },
+      normal: { apiKey: apiKeys[0], data: extractProfiles(normalData.watched) },
+    };
+  } catch (error: any) {
+    console.error(error);
+    throw new Error(error.message || 'Unexpected error while fetching all twitter profiles.');
+  }
+}
+
+function manageObject(data: any) {
+  Object.entries;
 }

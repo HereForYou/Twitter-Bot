@@ -1,10 +1,13 @@
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { MyContext } from '../config/types';
 import { twitterMarkUp } from '../models/markup.model';
+import { getAllProfiles } from '../utils/twitter.monitor';
+import { twitterText } from '../models/text.model';
 
 export async function twitterAction(ctx: MyContext) {
   try {
-    ctx.reply('Twitter', twitterMarkUp);
+    const profiles = await getAllProfiles();
+    ctx.reply(await twitterText(profiles.high, profiles.normal), twitterMarkUp);
   } catch (error) {
     console.error(error);
   }

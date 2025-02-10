@@ -1,7 +1,7 @@
 import { SOL_DECIMAL } from '../config/config';
 import { UserType } from './user.model';
 import { roundToSpecificDecimal } from '../utils/functions';
-import { TokenInfoType } from '../config/types';
+import { TokenInfoType, TweetProfile } from '../config/types';
 import { getTokenBalanceOfWallet, getTokenInfo } from '../utils/web3';
 
 /**
@@ -69,10 +69,10 @@ export const settingText =
   `   - Set the priority fee (in SOL) to ensure your transactions are processed quickly.\n` +
   `3. <b>Slippage BPS</b>: \n` +
   `   - Define the slippage in basis points (bps).\n` +
-  `4. <b>Start Time</b>: \n` +
-  `   - Choose the time when you want the bot to start trading.\n` +
-  `5. <b>Stop Time</b>: \n` +
-  `   - Set the time when you want the bot to stop trading.\n\n` +
+  `4. <b>Add Profile</b>: \n` +
+  `   - Add a new Twitter profile to begin watching.\n` +
+  `5. <b>Remove Profile</b>: \n` +
+  `   - Remove a Twitter profile to stop.\n\n` +
   `🔧 <b>Please adjust these settings according to your trading strategy and preferences.</b>`;
 
 export const buySuccessText = async (
@@ -112,4 +112,21 @@ export async function tokenText(mintAddress: string, pubKey: string) {
     `<b>CA</b>: <code>${mintAddress}</code>\n` +
     `<b>Balance</b>: ${balance}`
   );
+}
+
+export async function twitterText(
+  high: { apiKey: string; data: TweetProfile[] },
+  normal: { apiKey: string; data: TweetProfile[] }
+) {
+  let highProfiles = '';
+  let normalProfiles = '';
+  for (const profile of high.data) {
+    highProfiles += `<b>id</b>: ${profile.id} | <b>handle</b>: ${profile.handle}\n`;
+  }
+
+  for (const profile of normal.data) {
+    normalProfiles += `<b>id</b>: ${profile.id} | <b>handle</b>: ${profile.handle}\n`;
+  }
+
+  return `<code>${high.apiKey}</code>\n` + highProfiles + `<code>${normal.apiKey}</code>\n` + normalProfiles;
 }

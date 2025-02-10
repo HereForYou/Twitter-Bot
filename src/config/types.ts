@@ -37,6 +37,11 @@ export interface Tweet {
   metrics: Metrics;
 }
 
+export interface TweetProfile {
+  id: string;
+  handle: string;
+}
+
 export interface Author {
   id: string;
   handle: string;

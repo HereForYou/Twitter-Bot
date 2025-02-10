@@ -1,4 +1,5 @@
 import { bot } from '../config/config';
+import { TweetProfile } from '../config/types';
 import { User } from '../models/user.model';
 
 export function uint8ArrayToHex(uint8Array: Uint8Array) {
@@ -69,4 +70,12 @@ export function isValidWalletAddress(text: string) {
   const solanaAddressRegex = /\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g;
 
   return solanaAddressRegex.test(text);
+}
+
+export function extractProfiles(data: any) {
+  let returnData = [];
+  for (const [key, value] of Object.entries(data)) {
+    returnData.push({ id: key, handle: value as string } as TweetProfile);
+  }
+  return returnData;
 }
