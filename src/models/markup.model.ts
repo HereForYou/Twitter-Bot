@@ -109,3 +109,12 @@ const sellPart = [
     Markup.button.callback('Sell X %', 'Sell X %'),
   ],
 ];
+
+export function returnMarkUp(to: string) {
+  return {
+    reply_markup: Markup.inlineKeyboard([
+      [Markup.button.callback('Return', to), Markup.button.callback('✖ Close', 'Close')],
+    ]).reply_markup,
+    parse_mode: 'HTML' as ParseMode,
+  };
+}

@@ -43,11 +43,13 @@ export async function removeProfile(id: string, type: number) {
     });
 
     const res = await response.json();
-    console.log('remove profile', res);
-    return true;
-  } catch (error) {
+    if (res.code) {
+      return { success: false, message: res.message };
+    }
+    return { success: true, message: '' };
+  } catch (error: any) {
     console.error(error);
-    return false;
+    return { success: false, message: error.message || 'Unexpected error while removing profile' };
   }
 }
 
@@ -73,14 +75,10 @@ export async function getAllProfiles() {
 
     return {
       high: { apiKey: apiKeys[0], data: extractProfiles(highData.watched) },
-      normal: { apiKey: apiKeys[0], data: extractProfiles(normalData.watched) },
+      normal: { apiKey: apiKeys[1], data: extractProfiles(normalData.watched) },
     };
   } catch (error: any) {
     console.error(error);
     throw new Error(error.message || 'Unexpected error while fetching all twitter profiles.');
   }
-}
-
-function manageObject(data: any) {
-  Object.entries;
 }

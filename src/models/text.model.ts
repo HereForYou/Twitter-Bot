@@ -128,5 +128,5 @@ export async function twitterText(
     normalProfiles += `<b>id</b>: ${profile.id} | <b>handle</b>: ${profile.handle}\n`;
   }
 
-  return `<code>${high.apiKey}</code>\n` + highProfiles + `<code>${normal.apiKey}</code>\n` + normalProfiles;
+  return `<code>${high.apiKey}</code>\n` + highProfiles + `\n<code>${normal.apiKey}</code>\n` + normalProfiles;
 }

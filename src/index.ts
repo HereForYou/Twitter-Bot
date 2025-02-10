@@ -6,8 +6,8 @@ dotenv.config({
 import { SOL_DECIMAL, bot } from './config/config';
 import { User } from './models/user.model';
 import { extractTokenAddress, isNumber, isValidWalletAddress, sendMessageToAllActiveUsers } from './utils/functions';
-import { settingText, tokenText } from './models/text.model';
-import { settingMarkUp, tokenMarkUp } from './models/markup.model';
+import { settingText, tokenText, twitterText } from './models/text.model';
+import { returnMarkUp, settingMarkUp, tokenMarkUp } from './models/markup.model';
 import { checkAction, checkUser } from './utils/middleware';
 import { startCommand, helpCommand, setCommands, settingCommand } from './commands/commands';
 import {
@@ -30,8 +30,8 @@ import {
   transferSol,
   transferToken,
 } from './utils/web3';
-// import { highSpeedSocket } from './utils/twitter.monitor';
-// import { Event, MessageEvent } from 'ws';
+import { highSpeedSocket } from './utils/twitter.monitor';
+import { Event, MessageEvent } from 'ws';
 import { PublicKey } from '@solana/web3.js';
 import { addOrRemoveProfileAction, twitterAction } from './actions/twitter.action';
 import { addProfile, removeProfile } from './utils/twitter.monitor';
@@ -201,7 +201,22 @@ bot.on('text', async (ctx) => {
         ctx.reply(message);
       }
     } else if (botState === 'Remove Profile') {
-      const success = await removeProfile(text, 0);
+      if (text.split(/\s+/).length !== 2) {
+        await ctx.reply('Invalid format');
+        return;
+      }
+
+      const [id, type] = text.split(/\s+/);
+      if (!isNumber(type)) {
+        await ctx.reply('Invalid format');
+        return;
+      }
+      const { success, message } = await removeProfile(id, Number(type));
+      if (success) {
+        ctx.reply(`<code>${id}</code>\nSuccessfully removed from ${type + 1} api key.`, returnMarkUp('Twitter'));
+      } else {
+        ctx.reply(message, returnMarkUp('Twitter'));
+      }
     } else {
       // If it is invalid command
       if (text.startsWith('/')) {
@@ -335,29 +350,29 @@ bot
   })
   .catch(console.error);
 
-// highSpeedSocket.addEventListener('open', (event: Event) => {
-//   console.log('Websocket connection is established', event.type);
-// });
+highSpeedSocket.addEventListener('open', (event: Event) => {
+  console.log('Websocket connection is established', event.type);
+});
 
-// highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
-//   if (message.data !== 'PING') {
-//     const data = JSON.parse(message.data.toString());
-//     const mintAddress = extractTokenAddress(data.tweet.body.text as string);
-//     console.log('mintAddress:', mintAddress);
+highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
+  if (message.data !== 'PING') {
+    const data = JSON.parse(message.data.toString());
+    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+    console.log('mintAddress:', mintAddress);
 
-//     if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
-//       return;
-//     }
+    if (data.type === 'tweet.deleted.update' || !mintAddress || !(await isValidToken(mintAddress))) {
+      return;
+    }
 
-//     sendMessageToAllActiveUsers(mintAddress);
-//     // swapTokenForAllActiveUsers(mintAddress);
-//   }
-//   highSpeedSocket.send('PONG');
-// });
+    sendMessageToAllActiveUsers(mintAddress);
+    // swapTokenForAllActiveUsers(mintAddress);
+  }
+  highSpeedSocket.send('PONG');
+});
 
-// highSpeedSocket.addEventListener('close', () => {
-//   console.log('connection is closed');
-// });
+highSpeedSocket.addEventListener('close', () => {
+  console.log('connection is closed');
+});
 
 process.on('SIGINT', () => {
   bot.stop();
