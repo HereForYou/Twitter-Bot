@@ -167,7 +167,7 @@ bot.on('text', async (ctx) => {
       const lamports = await getBalanceOfWallet(user.wallet.publicKey);
       await transferSol(new PublicKey(text), lamports, user);
       ctx.session.state = '';
-    } else if (botState === 'Add Profile') {
+    } else if (botState === 'Adding Profile') {
       if (text.split(/\s+/).length !== 2) {
         await ctx.reply('Invalid format');
         return;
@@ -196,11 +196,11 @@ bot.on('text', async (ctx) => {
           type: profile?.type || 0,
         });
         await user.save();
-        ctx.reply('New twitter profile is successfully added');
+        ctx.reply('New twitter profile is successfully added', returnMarkUp('Twitter'));
       } else {
-        ctx.reply(message);
+        ctx.reply(message, returnMarkUp('Twitter'));
       }
-    } else if (botState === 'Remove Profile') {
+    } else if (botState === 'Removing Profile') {
       if (text.split(/\s+/).length !== 2) {
         await ctx.reply('Invalid format');
         return;

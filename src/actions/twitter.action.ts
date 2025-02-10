@@ -20,17 +20,27 @@ export async function addOrRemoveProfileAction(ctx: MyContext) {
     if (type === 'add') {
       ctx.reply(
         'Pease enter the below format.\n' +
-          `<code>profile_id or profile_handle api_key_type(0 or 1)</code>\n` +
+          `profile_id or profile_handle and api_key_type(0 or 1)\n` +
+          `<code>0: high speed api key, 1: normal speed api key</code>\n` +
           `i.e. <code>1158271757255630848 1</code> \n` +
           `i.e. <code>vako_dev 0</code> \n`,
         {
           parse_mode: 'HTML',
         }
       );
+      ctx.session.state = 'Adding Profile';
     } else {
-      ctx.reply(`Please enter the id or handle of profile to ${type}.`);
+      ctx.reply(
+        'Pease enter the below format.\n' +
+          `<b>Only profile_id</b> and api_key_type(0 or 1)\n` +
+          `<code>0: high speed api key, 1: normal speed api key</code>\n` +
+          `i.e. <code>1158271757255630848 1</code> \n` +
+          {
+            parse_mode: 'HTML',
+          }
+      );
+      ctx.session.state = 'Removing Profile';
     }
-    ctx.session.state = callbackData;
   } catch (error) {
     console.error(error);
   }
