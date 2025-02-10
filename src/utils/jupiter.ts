@@ -116,11 +116,16 @@ function getJupiterTransfers(transaction: ParsedTransactionWithMeta) {
   }
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function getTradeSize(signature: string) {
+  await sleep(500)
   console.log('signature', signature)
   const transaction = await connection.getParsedTransaction(signature, {commitment: 'confirmed', maxSupportedTransactionVersion: 0})
   if (!transaction) {
-    throw new Error('Unexpected error.');
+    return { diffSol: 0, diffOther: 0 }
   }
   try {
     const transfers = getJupiterTransfers(transaction);

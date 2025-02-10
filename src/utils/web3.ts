@@ -104,15 +104,15 @@ export async function getTokenDiffFromTransaction(signature: string, tokenIn: st
     const tokenInDiff = Math.abs(
       (postTokenBalance?.find((post) => post.mint === tokenIn && post.owner === source)?.uiTokenAmount
         .uiAmount || 0) -
-        (preTokenBalance?.find((pre) => pre.mint === tokenIn && pre.owner === source)?.uiTokenAmount
-          .uiAmount || 0)
+      (preTokenBalance?.find((pre) => pre.mint === tokenIn && pre.owner === source)?.uiTokenAmount
+        .uiAmount || 0)
     );
 
     const tokenOutDiff = Math.abs(
       (postTokenBalance?.find((post) => post.mint === tokenOut && post.owner === source)?.uiTokenAmount
         .uiAmount || 0) -
-        (preTokenBalance?.find((pre) => pre.mint === tokenOut && pre.owner === source)?.uiTokenAmount
-          .uiAmount || 0)
+      (preTokenBalance?.find((pre) => pre.mint === tokenOut && pre.owner === source)?.uiTokenAmount
+        .uiAmount || 0)
     );
 
     return { tokenInDiff: tokenInDiff, tokenOutDiff: tokenOutDiff };
@@ -153,15 +153,19 @@ export async function executeTransaction(transaction: VersionedTransaction) {
       maxRetries: 5,
     });
 
-    await connection.confirmTransaction({
+    const confirmation = await connection.confirmTransaction({
       blockhash,
       lastValidBlockHeight,
       signature,
-    });
+    },
+      'confirmed');
+    if (confirmation.value.err) {
+      throw new Error('🚨Transaction not confirmed.\n' + confirmation.value.err.toString());
+    }
     return { success: true, signature: signature };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error while executeTransaction:', error);
-    return { success: false, signature: '' };
+    throw new Error(error.message || 'Unexpected error while executing transaction.')
   }
 }
 
@@ -194,9 +198,9 @@ export async function swapTokens(
 
     const result = await executeTransaction(signedTransaction);
     console.log(
-      'Passed signTransaction function',
+      'Passed executeTransaction function',
       result.signature,
-      '============================================= END =============='
+      '\n============================================= END =============='
     );
 
     if (result.success === true) {
@@ -401,7 +405,7 @@ export async function transferToken(
     bot.telegram.sendMessage(
       user.tgId,
       `🎉 <b>${balNoLamp}</b> Successfully transferred to <code>${destination.toString()}</code>\n` +
-        `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
+      `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
       { parse_mode: 'HTML' }
     );
   } catch (error: any) {
@@ -466,7 +470,7 @@ export async function transferSol(toPubkey: PublicKey, _balInLamp: number, user:
     bot.telegram.sendMessage(
       user.tgId,
       `🎉 <b>${lamports / SOL_DECIMAL}</b> SOL successfully transferred to <code>${toPubkey.toString()}</code>\n` +
-        `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
+      `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
       { parse_mode: 'HTML' }
     );
   } catch (error) {
