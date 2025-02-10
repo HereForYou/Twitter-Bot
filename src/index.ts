@@ -9,7 +9,7 @@ import { extractTokenAddress, isNumber, isValidWalletAddress, sendMessageToAllAc
 import { settingText, tokenText, twitterText } from './models/text.model';
 import { returnMarkUp, settingMarkUp, tokenMarkUp } from './models/markup.model';
 import { checkAction, checkUser } from './utils/middleware';
-import { startCommand, helpCommand, setCommands, settingCommand } from './commands/commands';
+import { startCommand, helpCommand, setCommands, settingCommand, twitterCommand } from './commands/commands';
 import {
   settingAction,
   closeAction,
@@ -54,6 +54,11 @@ bot.command('help', helpCommand);
  * The part to handle when 'setting' command is inputted
  */
 bot.command('setting', settingCommand);
+
+/**
+ * The part to handle when 'setting' command is inputted
+ */
+bot.command('twitter', twitterCommand);
 
 //-------------------------------------------------------------------------------------------------------------+
 //                                   The part to listen the messages from bot                                  |
@@ -213,7 +218,10 @@ bot.on('text', async (ctx) => {
       }
       const { success, message } = await removeProfile(id, Number(type));
       if (success) {
-        ctx.reply(`<code>${id}</code>\nSuccessfully removed from ${type + 1} api key.`, returnMarkUp('Twitter'));
+        ctx.reply(
+          `<code>${id}</code>\nSuccessfully removed from ${type} api key.`,
+          returnMarkUp('Twitter')
+        );
       } else {
         ctx.reply(message, returnMarkUp('Twitter'));
       }

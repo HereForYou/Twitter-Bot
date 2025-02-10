@@ -118,8 +118,8 @@ export async function twitterText(
   high: { apiKey: string; data: TweetProfile[] },
   normal: { apiKey: string; data: TweetProfile[] }
 ) {
-  let highProfiles = '<b>First Api Key</b> ⤵\n';
-  let normalProfiles = '<b>Second Api Key</b> ⤵\n';
+  let highProfiles = '<b>HIGH SPEED</b> ⤵\n';
+  let normalProfiles = '<b>NORMAL</b> ⤵\n';
   for (const profile of high.data) {
     highProfiles += `<b>id</b>: ${profile.id} | <b>handle</b>: ${profile.handle}\n`;
   }

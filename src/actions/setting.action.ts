@@ -53,8 +53,7 @@ export const snipeAmountAction = async (ctx: MyContext) => {
     if (action === 'Snipe Amount') replyMessage = '✍ Input the *SOL* amount you want to consume for buy';
     else if (action === 'Slippage Bps') replyMessage = '✍ Input the slippageBps(1 = 0.01%)';
     else if (action === 'Priority Fee')
-      replyMessage =
-        '✍ Input the priority fee to prioritize your transaction in Lamports(Default: 5000, Recommend: 200000).';
+      replyMessage = '✍ Input the priority fee to prioritize your transaction in SOL.';
     else replyMessage = '✍ Input the Jito fee amount';
     await ctx.reply(replyMessage, { parse_mode: 'HTML' });
     ctx.session.state = action;
