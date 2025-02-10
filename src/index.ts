@@ -31,11 +31,10 @@ import {
   transferSol,
   transferToken,
 } from './utils/web3';
-import { highSpeedSocket, normalSpeedSocket } from './utils/twitter.monitor';
+import { highSpeedSocket, normalSpeedSocket, addProfile, removeProfile } from './utils/twitter.monitor';
 import { Event, MessageEvent } from 'ws';
 import { PublicKey } from '@solana/web3.js';
 import { addOrRemoveProfileAction, twitterAction } from './actions/twitter.action';
-import { addProfile, removeProfile } from './utils/twitter.monitor';
 
 //-------------------------------------------------------------------------------------------------------------+
 //                                             Set the commands                                                |
@@ -178,23 +177,18 @@ bot.on('text', async (ctx) => {
         await ctx.reply('Invalid format');
         return;
       }
-
       const [id, type] = text.split(/\s+/);
       if (!isNumber(type)) {
         await ctx.reply('Invalid format');
         return;
       }
-
       let data;
-
       if (isNumber(id)) {
         data = { id: id };
       } else {
         data = { handle: id };
       }
-
       const { success, data: profile, message } = await addProfile(data, Number(type));
-
       if (success) {
         user.twitterProfiles.push({
           id: profile?.id,
@@ -211,7 +205,6 @@ bot.on('text', async (ctx) => {
         await ctx.reply('Invalid format');
         return;
       }
-
       const [id, type] = text.split(/\s+/);
       if (!isNumber(type)) {
         await ctx.reply('Invalid format');

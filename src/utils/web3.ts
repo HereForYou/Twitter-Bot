@@ -227,8 +227,8 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
     const balance = await getBalanceOfWallet(user.wallet.publicKey); // Fetch the balance of wallet
 
     // If balance is lower than amount
-    if (balance === 0 || balance < amount) {
-      await bot.telegram.sendMessage(user.tgId, '🙅‍♀ Insufficient balance. Please top up your wallet.');
+    if (balance < 20000000 || balance < amount) {
+      await bot.telegram.sendMessage(user.tgId, '🙅‍♀ Insufficient balance for executing transaction. Please top up your wallet.');
       return;
     }
     bot.telegram.sendMessage(user.tgId, `Transaction is pending now ${amount / SOL_DECIMAL}`);

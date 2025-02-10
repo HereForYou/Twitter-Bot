@@ -153,7 +153,17 @@ export async function sellTokenAction(ctx: MyContext) {
 
 export async function transferTokenAction(ctx: MyContext) {
   const callbackData = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
+  const tgId = ctx.chat?.id;
+  const user = await User.findOne({ tgId });
+  if (!user || !ctx.session.mint) {
+    return;
+  }
   try {
+    const { balanceNoLamp } = await getTokenBalanceOfWallet(user.wallet.publicKey, ctx.session.mint);
+    if (balanceNoLamp === 0) {
+      await ctx.reply('The balance of this token is 0.');
+      return;
+    }
     ctx.reply('Input the wallet address to withdraw.');
     ctx.session.state = callbackData;
   } catch (error) {
