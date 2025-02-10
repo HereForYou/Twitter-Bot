@@ -187,7 +187,19 @@ bot.on('text', async (ctx) => {
         data = { handle: id };
       }
 
-      const success = await addProfile(data, Number(type));
+      const { success, data: profile, message } = await addProfile(data, Number(type));
+
+      if (success) {
+        user.twitterProfiles.push({
+          id: profile?.id,
+          handle: profile?.handle,
+          type: profile?.type || 0,
+        });
+        await user.save();
+        ctx.reply('New twitter profile is successfully added');
+      } else {
+        ctx.reply(message);
+      }
     } else if (botState === 'Remove Profile') {
       const success = await removeProfile(text, 0);
     } else {
