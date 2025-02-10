@@ -34,10 +34,10 @@ export async function addOrRemoveProfileAction(ctx: MyContext) {
         'Pease enter the below format.\n' +
           `<b>Only profile_id</b> and api_key_type(0 or 1)\n` +
           `<code>0: high speed api key, 1: normal speed api key</code>\n` +
-          `i.e. <code>1158271757255630848 1</code> \n` +
-          {
-            parse_mode: 'HTML',
-          }
+          `i.e. <code>1158271757255630848 1</code> \n`,
+        {
+          parse_mode: 'HTML',
+        }
       );
       ctx.session.state = 'Removing Profile';
     }
