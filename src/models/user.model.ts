@@ -79,7 +79,7 @@ const UserSchema = new Schema({
   },
   slippageBps: {
     type: Number,
-    default: 50,
+    default: 5,
   },
   chian: {
     type: String,

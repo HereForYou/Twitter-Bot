@@ -54,6 +54,10 @@ export function addItemToArray(item: string, array: string[]) {
   }
 }
 
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function extractTokenAddress(text: string) {
   // Regular expression to match Solana token addresses (Base58 encoded, 32-44 chars)
   const solanaAddressRegex = /\b[1-9A-HJ-NP-Za-km-z]{43,44}\b/g;

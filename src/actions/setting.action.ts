@@ -51,7 +51,7 @@ export const snipeAmountAction = async (ctx: MyContext) => {
     const action = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
     let replyMessage = '';
     if (action === 'Snipe Amount') replyMessage = '✍ Input the *SOL* amount you want to consume for buy';
-    else if (action === 'Slippage Bps') replyMessage = '✍ Input the slippageBps(1 = 0.01%)';
+    else if (action === 'Slippage Bps') replyMessage = '✍ Input the slippageBps in percent.';
     else if (action === 'Priority Fee')
       replyMessage = '✍ Input the priority fee to prioritize your transaction in SOL.';
     else replyMessage = '✍ Input the Jito fee amount';

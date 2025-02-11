@@ -2,7 +2,7 @@ import { ParsedInstruction, ParsedTransactionWithMeta, PartiallyDecodedInstructi
 import fetch from 'cross-fetch';
 import { getTokenMintAddress } from './web3';
 import { connection, SOL_ADDRESS, SOL_DECIMAL } from '../config/config';
-import { roundToSpecificDecimal } from './functions';
+import { roundToSpecificDecimal, sleep } from './functions';
 
 const JUPITER_AGGREGATOR_V6 = new PublicKey('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4');
 
@@ -17,7 +17,7 @@ const JUPITER_AGGREGATOR_V6 = new PublicKey('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5
 export async function getQuoteForSwap(inputAddr: string, outputAddr: string, amount: number, slippageBps: number) {
   try {
     const response = await fetch(
-      `https://quote-api.jup.ag/v6/quote?inputMint=${inputAddr}&outputMint=${outputAddr}&amount=${amount}&slippageBps=${slippageBps}`
+      `https://quote-api.jup.ag/v6/quote?inputMint=${inputAddr}&outputMint=${outputAddr}&amount=${amount}&slippageBps=${slippageBps * 100}`
     );
     const quote = await response.json();
     return quote;
@@ -114,10 +114,6 @@ function getJupiterTransfers(transaction: ParsedTransactionWithMeta) {
   } catch (error: any) {
     throw new Error(error.message || 'Unexpected error while extracting transfers from jupiter dex.');
   }
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function getTradeSize(signature: string) {

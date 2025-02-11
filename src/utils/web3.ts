@@ -29,6 +29,7 @@ import {
   getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import { sellMarkUp, tokenMarkUp } from '../models/markup.model';
+import { sleep } from './functions';
 
 export async function getTokenInfo(mintAddress: string) {
   const metaplex = Metaplex.make(connection);
@@ -69,7 +70,6 @@ export async function getTokenBalanceOfWallet(walletAddr: string, tokenAddr: str
     });
     const tokenInfo = info?.value[0]?.account?.data.parsed.info.tokenAmount;
     // tokenInfo.decimals
-
     return { balanceInLamp: Number(tokenInfo?.amount), balanceNoLamp: Number(tokenInfo?.uiAmount) };
   } catch (error: any) {
     console.error('Error while getBalanceOfWallet', error);
@@ -257,6 +257,7 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
 
     const tokenAmount = result.tokenOutDiff;
 
+    await sleep(2500)
     await bot.telegram.sendMessage(
       user.tgId,
       await buySuccessText(user, tokenInfo, result.signature, amount / SOL_DECIMAL, tokenAmount),
@@ -300,6 +301,7 @@ export async function sellToken(user: UserType, mintAddress: string, amount: num
       throw new Error(result.message || 'Transaction is expired.');
     }
 
+    await sleep(2500)
     await bot.telegram.sendMessage(
       user.tgId,
       await sellSuccessText(user, tokenInfo, result.tokenOutDiff, result.signature),

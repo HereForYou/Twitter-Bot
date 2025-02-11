@@ -359,9 +359,9 @@ highSpeedSocket.addEventListener('open', (event: Event) => {
 
 highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
   if (message.data !== 'PING') {
-    const data = JSON.parse(message.data.toString());
+    const data = JSON.parse(message?.data.toString());
     console.log('high', data)
-    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+    const mintAddress = extractTokenAddress(data?.tweet?.body?.text as string);
     console.log('High mintAddress:', mintAddress);
 
     if (data.type !== 'tweet.update' || !mintAddress || !(await isValidToken(mintAddress))) {
@@ -385,12 +385,12 @@ normalSpeedSocket.addEventListener('open', (event: Event) => {
 
 normalSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
   if (message.data !== 'PING') {
-    const data = JSON.parse(message.data.toString());
+    const data = JSON.parse(message?.data.toString());
     console.log('normal', data)
     if (data.type !== 'tweet.update') {
       return
     }
-    const mintAddress = extractTokenAddress(data.tweet.body.text as string);
+    const mintAddress = extractTokenAddress(data?.tweet?.body?.text as string);
     console.log('Normal mintAddress:', mintAddress);
 
     if (!mintAddress || !(await isValidToken(mintAddress))) {
