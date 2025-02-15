@@ -42,6 +42,22 @@ export const onOffAction = async (ctx: MyContext) => {
   }
 };
 
+export const mevProtectAction = async (ctx: MyContext) => {
+  try {
+    const tgId = ctx.chat?.id;
+    const user = await User.findOne({ tgId });
+    if (!user) {
+      await ctx.reply("We can't find you. Please enter /start command and then try again.");
+      return;
+    }
+    user.mevProtect = !user.mevProtect;
+    await user.save();
+    ctx.editMessageText(settingText, await settingMarkUp(user));
+  } catch (error) {
+    console.error('Error while walletAction:', error);
+  }
+};
+
 /**
  * The function to handle 'Snipe Amount || Jito Fee' action
  * @param {MyContext} ctx

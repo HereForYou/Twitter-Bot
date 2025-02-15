@@ -30,6 +30,10 @@ export const settingMarkUp = async (user: UserType) => {
           Markup.button.callback(`💵 Priority Fee: ${user.priorityFee} SOL`, 'Priority Fee'),
           Markup.button.callback(`🆚 Slippage Bps: ${user.slippageBps}`, 'Slippage Bps'),
         ],
+        [
+          Markup.button.callback(`Mev Protect: ${user.mevProtect ? '🟢' : '🔴'}`, 'Mev Protect'),
+          Markup.button.callback(`💰 Buy Tip: ${user.jitoFee} SOL`, 'Jito Fee'),
+        ],
         [Markup.button.callback(`🦜 Twitter`, 'Twitter')],
         [
           Markup.button.callback('➕ Add Profile', 'Add Profile'),

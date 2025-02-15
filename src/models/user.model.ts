@@ -37,6 +37,7 @@ export interface UserType extends Document {
   chian?: string;
   botStatus: boolean;
   simulationMode?: boolean;
+  mevProtect: boolean;
   autoTrade: boolean;
   tokens: Token[];
   twitterProfiles: Twitter[];
@@ -84,6 +85,10 @@ const UserSchema = new Schema({
   chian: {
     type: String,
     default: 'Solana',
+  },
+  mevProtect: {
+    type: Boolean,
+    default: false,
   },
   botStatus: {
     type: Boolean,

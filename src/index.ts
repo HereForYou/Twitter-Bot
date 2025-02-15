@@ -19,7 +19,13 @@ import {
   sellTokenAction,
   transferTokenAction,
 } from './actions/general.action';
-import { walletAction, onOffAction, snipeAmountAction, autoTradeAction } from './actions/setting.action';
+import {
+  walletAction,
+  onOffAction,
+  snipeAmountAction,
+  autoTradeAction,
+  mevProtectAction,
+} from './actions/setting.action';
 import {
   buyToken,
   getBalanceOfWallet,
@@ -212,10 +218,7 @@ bot.on('text', async (ctx) => {
       }
       const { success, message } = await removeProfile(id, Number(type));
       if (success) {
-        ctx.reply(
-          `<code>${id}</code>\nSuccessfully removed from ${type} api key.`,
-          returnMarkUp('Twitter')
-        );
+        ctx.reply(`<code>${id}</code>\nSuccessfully removed from ${type} api key.`, returnMarkUp('Twitter'));
       } else {
         ctx.reply(message, returnMarkUp('Twitter'));
       }
@@ -313,6 +316,8 @@ bot.action('Wallet', (ctx, next) => checkAction(ctx, next, 'Wallet'), walletActi
  */
 bot.action('On Off', onOffAction);
 
+bot.action('Mev Protect', mevProtectAction);
+
 /**
  * Catch the action when user clicks the '💵 Snipe Amount: * SOL' callback button
  */
@@ -360,7 +365,7 @@ highSpeedSocket.addEventListener('open', (event: Event) => {
 highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
   if (message.data !== 'PING') {
     const data = JSON.parse(message?.data.toString());
-    console.log('high', data)
+    console.log('high', data);
     const mintAddress = extractTokenAddress(data?.tweet?.body?.text as string);
     console.log('High mintAddress:', mintAddress);
 
@@ -386,9 +391,9 @@ normalSpeedSocket.addEventListener('open', (event: Event) => {
 normalSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
   if (message.data !== 'PING') {
     const data = JSON.parse(message?.data.toString());
-    console.log('normal', data)
+    console.log('normal', data);
     if (data.type !== 'tweet.update') {
-      return
+      return;
     }
     const mintAddress = extractTokenAddress(data?.tweet?.body?.text as string);
     console.log('Normal mintAddress:', mintAddress);
