@@ -3,7 +3,7 @@ import { Context } from 'telegraf';
 export interface SessionData {
   state: string;
   msgId?: number | undefined;
-  mint: string | undefined;
+  mint?: TokenInfoType;
 }
 
 export interface MyContext extends Context {

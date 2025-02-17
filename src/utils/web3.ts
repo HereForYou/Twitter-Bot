@@ -22,9 +22,10 @@ import {
   createTransferInstruction,
   getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
-import { sellMarkUp, tokenMarkUp } from '../models/markup.model';
+import { tokenMarkUp } from '../models/markup.model';
 import { sleep } from './functions';
 import { sendBundle } from './jito';
+import { TokenInfoType } from '../config/types';
 
 export async function getTokenInfo(mintAddress: string) {
   const metaplex = Metaplex.make(connection);
@@ -227,7 +228,7 @@ export async function swapTokens(
   }
 }
 
-export async function buyToken(user: UserType, mintAddress: string, amount: number) {
+export async function buyToken(user: UserType, mint: TokenInfoType, amount: number) {
   try {
     const balance = await getBalanceOfWallet(user.wallet.publicKey); // Fetch the balance of wallet
 
@@ -244,7 +245,7 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
     // Buy the token with SOL
     const result = await swapTokens(
       SOL_ADDRESS,
-      mintAddress,
+      mint.address,
       amount,
       user.wallet.privateKey,
       Math.floor(user.priorityFee * SOL_DECIMAL),
@@ -258,14 +259,12 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
       throw new Error(result.message || 'Transaction is expired.');
     }
 
-    const tokenInfo = await getTokenInfo(mintAddress);
-
     const tokenAmount = result.tokenOutDiff;
 
     await sleep(2500);
     await bot.telegram.sendMessage(
       user.tgId,
-      await buySuccessText(user, tokenInfo, result.signature, amount / SOL_DECIMAL, tokenAmount),
+      await buySuccessText(user, mint, result.signature, amount / SOL_DECIMAL, tokenAmount),
       tokenMarkUp(user)
     );
 
@@ -279,20 +278,19 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
   }
 }
 
-export async function sellToken(user: UserType, mintAddress: string, amount: number) {
+export async function sellToken(user: UserType, mint: TokenInfoType, amount: number) {
   try {
-    const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, mintAddress); // Fetch the token balance of wallet
-    const tokenInfo = await getTokenInfo(mintAddress);
+    const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, mint.address); // Fetch the token balance of wallet
 
     // If balance is lower than amount
     if (balance === 0 || balance < amount) {
       throw new Error('🙅‍♀ Insufficient token balance.');
     }
-    bot.telegram.sendMessage(user.tgId, `Transaction is pending ${amount / 10 ** tokenInfo.decimals}`);
+    bot.telegram.sendMessage(user.tgId, `Transaction is pending ${amount / 10 ** mint.decimals}`);
 
     // Buy the token with SOL
     const result = await swapTokens(
-      mintAddress,
+      mint.address,
       SOL_ADDRESS,
       amount,
       user.wallet.privateKey,
@@ -310,7 +308,7 @@ export async function sellToken(user: UserType, mintAddress: string, amount: num
     await sleep(2500);
     await bot.telegram.sendMessage(
       user.tgId,
-      await sellSuccessText(user, tokenInfo, result.tokenOutDiff, result.signature),
+      await sellSuccessText(user, mint, result.tokenOutDiff, result.signature),
       tokenMarkUp(user)
     );
     console.log('========================= END ============================ for', user.tgId);
@@ -327,10 +325,12 @@ export async function swapTokenForAllActiveUsers(mintAddress: string) {
   try {
     const users = await User.find({ botStatus: true, autoTrade: true, snipeAmount: { $gt: 0 } });
 
+    const tokenInfo = await getTokenInfo(mintAddress);
+
     await Promise.all(
       users.map(async (user) => {
         bot.telegram.sendMessage(user.tgId, `Transaction is pending now ${user.snipeAmount}`);
-        await buyToken(user, mintAddress, user.snipeAmount * SOL_DECIMAL);
+        await buyToken(user, tokenInfo, user.snipeAmount * SOL_DECIMAL);
       })
     );
   } catch (error) {

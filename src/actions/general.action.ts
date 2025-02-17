@@ -133,7 +133,7 @@ export async function sellTokenAction(ctx: MyContext) {
         return;
       }
 
-      const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, mint);
+      const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, mint.address);
       const amount = Math.floor((balance * Number(ratio)) / 100);
 
       await sellToken(user, mint, amount);
@@ -159,7 +159,7 @@ export async function transferTokenAction(ctx: MyContext) {
     return;
   }
   try {
-    const { balanceNoLamp } = await getTokenBalanceOfWallet(user.wallet.publicKey, ctx.session.mint);
+    const { balanceNoLamp } = await getTokenBalanceOfWallet(user.wallet.publicKey, ctx.session.mint.address);
     if (balanceNoLamp === 0) {
       await ctx.reply('The balance of this token is 0.');
       return;

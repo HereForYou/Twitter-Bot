@@ -129,7 +129,7 @@ bot.on('text', async (ctx) => {
         return;
       }
 
-      const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, ctx.session.mint);
+      const { balanceInLamp: balance } = await getTokenBalanceOfWallet(user.wallet.publicKey, ctx.session.mint.address);
       const amount = Math.floor((balance * Number(text)) / 100);
 
       sellToken(user, ctx.session.mint, amount);
@@ -147,8 +147,7 @@ bot.on('text', async (ctx) => {
         return;
       }
 
-      const { decimals } = await getTokenInfo(ctx.session.mint);
-      const amount = Math.floor(Number(text) * 10 ** decimals);
+      const amount = Math.floor(Number(text) * 10 ** ctx.session.mint.decimals);
 
       sellToken(user, ctx.session.mint, amount);
       ctx.session.state = '';
@@ -166,7 +165,7 @@ bot.on('text', async (ctx) => {
         return;
       }
 
-      const { balanceInLamp, balanceNoLamp } = await getTokenBalanceOfWallet(user.wallet.publicKey, mint);
+      const { balanceInLamp, balanceNoLamp } = await getTokenBalanceOfWallet(user.wallet.publicKey, mint.address);
       await transferToken(new PublicKey(mint), new PublicKey(text), balanceInLamp, balanceNoLamp, user);
       ctx.session.state = '';
     } else if (botState === 'Transfer SOL') {
@@ -238,8 +237,10 @@ bot.on('text', async (ctx) => {
         return;
       }
 
-      ctx.session.mint = text;
-      await ctx.reply(await tokenText(text, user.wallet.publicKey), tokenMarkUp(user));
+      const tokenInfo = await getTokenInfo(text);
+
+      ctx.session.mint = tokenInfo;
+      await ctx.reply(await tokenText(tokenInfo, user.wallet.publicKey), tokenMarkUp(user));
     }
   } catch (error) {
     console.error('Error while on text:', error);

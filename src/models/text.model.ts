@@ -2,7 +2,7 @@ import { SOL_DECIMAL } from '../config/config';
 import { UserType } from './user.model';
 import { roundToSpecificDecimal } from '../utils/functions';
 import { TokenInfoType, TweetProfile } from '../config/types';
-import { getTokenBalanceOfWallet, getTokenInfo } from '../utils/web3';
+import { getTokenBalanceOfWallet } from '../utils/web3';
 
 /**
  * The text when start command is inputed
@@ -104,12 +104,11 @@ export const sellSuccessText = async (user: UserType, token: TokenInfoType, earn
   );
 };
 
-export async function tokenText(mintAddress: string, pubKey: string) {
-  const { balanceNoLamp: balance } = await getTokenBalanceOfWallet(pubKey, mintAddress);
-  const token = await getTokenInfo(mintAddress);
+export async function tokenText(mint: TokenInfoType, pubKey: string) {
+  const { balanceNoLamp: balance } = await getTokenBalanceOfWallet(pubKey, mint.address);
   return (
-    `<b>Name</b>: ${token?.name} (${token?.symbol})\n` +
-    `<b>CA</b>: <code>${mintAddress}</code>\n` +
+    `<b>Name</b>: ${mint.name} (${mint.symbol})\n` +
+    `<b>CA</b>: <code>${mint.address}</code>\n` +
     `<b>Balance</b>: ${balance}`
   );
 }

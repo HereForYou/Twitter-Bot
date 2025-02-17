@@ -17,7 +17,9 @@ const JUPITER_AGGREGATOR_V6 = new PublicKey('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5
 export async function getQuoteForSwap(inputAddr: string, outputAddr: string, amount: number, slippageBps: number) {
   try {
     const response = await fetch(
-      `https://quote-api.jup.ag/v6/quote?inputMint=${inputAddr}&outputMint=${outputAddr}&amount=${amount}&slippageBps=${slippageBps * 100}`
+      `${process.env.JUPITER_QUOTE_ENDPOINT}?inputMint=${inputAddr}&outputMint=${outputAddr}&amount=${amount}&slippageBps=${
+        slippageBps * 100
+      }`
     );
     const quote = await response.json();
     return quote;
@@ -35,7 +37,7 @@ export async function getQuoteForSwap(inputAddr: string, outputAddr: string, amo
  */
 export async function getSerializedTransaction(quote: any, publicKey: string, priorityFee: number) {
   try {
-    const response = await fetch('https://quote-api.jup.ag/v6/swap', {
+    const response = await fetch(process.env.JUPITER_SWAP_ENDPOINT || '', {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
@@ -62,7 +64,7 @@ export async function getSerializedTransaction(quote: any, publicKey: string, pr
  */
 export async function getTokenPrice(token: string) {
   try {
-    const response = await fetch(`https://api.jup.ag/price/v2?ids=${token}`, {
+    const response = await fetch(`${process.env.JUPITER_TOKEN_PRICE_ENDPOINT}?ids=${token}`, {
       method: 'get',
       redirect: 'follow',
     });
@@ -117,11 +119,14 @@ function getJupiterTransfers(transaction: ParsedTransactionWithMeta) {
 }
 
 export async function getTradeSize(signature: string) {
-  await sleep(500)
-  console.log('signature', signature)
-  const transaction = await connection.getParsedTransaction(signature, {commitment: 'confirmed', maxSupportedTransactionVersion: 0})
+  await sleep(500);
+  console.log('signature', signature);
+  const transaction = await connection.getParsedTransaction(signature, {
+    commitment: 'confirmed',
+    maxSupportedTransactionVersion: 0,
+  });
   if (!transaction) {
-    return { diffSol: 0, diffOther: 0 }
+    return { diffSol: 0, diffOther: 0 };
   }
   try {
     const transfers = getJupiterTransfers(transaction);
@@ -146,7 +151,6 @@ export async function getTradeSize(signature: string) {
       isBuy: diffSol > 0 ? true : false,
     };
   } catch (error) {
-    throw new Error('Error while caculating trade size.')
+    throw new Error('Error while caculating trade size.');
   }
 }
-
