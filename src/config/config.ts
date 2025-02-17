@@ -63,7 +63,7 @@ bot.use((ctx, next) => {
     if (!ctx.session) {
       ctx.session = {
         state: '',
-        mint: '',
+        mint: undefined,
       };
     }
     return next();
