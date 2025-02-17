@@ -11,13 +11,7 @@ import {
 import { Metaplex } from '@metaplex-foundation/js';
 import { UserType } from '../models/user.model';
 import { User } from '../models/user.model';
-import {
-  connection,
-  bot,
-  SOL_ADDRESS,
-  SOL_DECIMAL,
-  JUPITER_FEE_ACCOUNT,
-} from '../config/config';
+import { connection, bot, SOL_ADDRESS, SOL_DECIMAL, JUPITER_FEE_ACCOUNT } from '../config/config';
 import { buySuccessText, sellSuccessText } from '../models/text.model';
 import { getQuoteForSwap, getSerializedTransaction, getTokenPrice, getTradeSize } from './jupiter';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
@@ -30,6 +24,7 @@ import {
 } from '@solana/spl-token';
 import { sellMarkUp, tokenMarkUp } from '../models/markup.model';
 import { sleep } from './functions';
+import { sendBundle } from './jito';
 
 export async function getTokenInfo(mintAddress: string) {
   const metaplex = Metaplex.make(connection);
@@ -90,7 +85,12 @@ export const generateWallet = async () => {
   }
 };
 
-export async function getTokenDiffFromTransaction(signature: string, tokenIn: string, tokenOut: string, source: string) {
+export async function getTokenDiffFromTransaction(
+  signature: string,
+  tokenIn: string,
+  tokenOut: string,
+  source: string
+) {
   try {
     const transaction = await connection.getParsedTransaction(signature, {
       commitment: 'confirmed',
@@ -99,20 +99,16 @@ export async function getTokenDiffFromTransaction(signature: string, tokenIn: st
 
     const postTokenBalance = transaction?.meta?.postTokenBalances;
     const preTokenBalance = transaction?.meta?.preTokenBalances;
-    console.log(postTokenBalance)
+    console.log(postTokenBalance);
 
     const tokenInDiff = Math.abs(
-      (postTokenBalance?.find((post) => post.mint === tokenIn && post.owner === source)?.uiTokenAmount
-        .uiAmount || 0) -
-      (preTokenBalance?.find((pre) => pre.mint === tokenIn && pre.owner === source)?.uiTokenAmount
-        .uiAmount || 0)
+      (postTokenBalance?.find((post) => post.mint === tokenIn && post.owner === source)?.uiTokenAmount.uiAmount || 0) -
+        (preTokenBalance?.find((pre) => pre.mint === tokenIn && pre.owner === source)?.uiTokenAmount.uiAmount || 0)
     );
 
     const tokenOutDiff = Math.abs(
-      (postTokenBalance?.find((post) => post.mint === tokenOut && post.owner === source)?.uiTokenAmount
-        .uiAmount || 0) -
-      (preTokenBalance?.find((pre) => pre.mint === tokenOut && pre.owner === source)?.uiTokenAmount
-        .uiAmount || 0)
+      (postTokenBalance?.find((post) => post.mint === tokenOut && post.owner === source)?.uiTokenAmount.uiAmount || 0) -
+        (preTokenBalance?.find((pre) => pre.mint === tokenOut && pre.owner === source)?.uiTokenAmount.uiAmount || 0)
     );
 
     return { tokenInDiff: tokenInDiff, tokenOutDiff: tokenOutDiff };
@@ -153,19 +149,21 @@ export async function executeTransaction(transaction: VersionedTransaction) {
       maxRetries: 5,
     });
 
-    const confirmation = await connection.confirmTransaction({
-      blockhash,
-      lastValidBlockHeight,
-      signature,
-    },
-      'confirmed');
+    const confirmation = await connection.confirmTransaction(
+      {
+        blockhash,
+        lastValidBlockHeight,
+        signature,
+      },
+      'confirmed'
+    );
     if (confirmation.value.err) {
       throw new Error('🚨Transaction not confirmed.\n' + confirmation.value.err.toString());
     }
     return { success: true, signature: signature };
   } catch (error: any) {
     console.error('Error while executeTransaction:', error);
-    throw new Error(error.message || 'Unexpected error while executing transaction.')
+    throw new Error(error.message || 'Unexpected error while executing transaction.');
   }
 }
 
@@ -176,6 +174,7 @@ export async function swapTokens(
   secretKey: string,
   priorityFee: number,
   slippageBps: number,
+  jitoFee: number,
   source: string
 ) {
   try {
@@ -196,7 +195,9 @@ export async function swapTokens(
     const signedTransaction = await signTransaction(transaction, keyPair);
     console.log('Passed signTransaction function');
 
-    const result = await executeTransaction(signedTransaction);
+    // const result = await executeTransaction(signedTransaction);
+
+    const result = await sendBundle([signedTransaction], keyPair, jitoFee);
     console.log(
       'Passed executeTransaction function',
       result.signature,
@@ -232,7 +233,10 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
 
     // If balance is lower than amount
     if (balance < 20000000 || balance < amount) {
-      await bot.telegram.sendMessage(user.tgId, '🙅‍♀ Insufficient balance for executing transaction. Please top up your wallet.');
+      await bot.telegram.sendMessage(
+        user.tgId,
+        '🙅‍♀ Insufficient balance for executing transaction. Please top up your wallet.'
+      );
       return;
     }
     bot.telegram.sendMessage(user.tgId, `Transaction is pending now ${amount / SOL_DECIMAL}`);
@@ -245,6 +249,7 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
       user.wallet.privateKey,
       Math.floor(user.priorityFee * SOL_DECIMAL),
       user.slippageBps,
+      user.jitoFee,
       user.wallet.publicKey
     );
 
@@ -257,7 +262,7 @@ export async function buyToken(user: UserType, mintAddress: string, amount: numb
 
     const tokenAmount = result.tokenOutDiff;
 
-    await sleep(2500)
+    await sleep(2500);
     await bot.telegram.sendMessage(
       user.tgId,
       await buySuccessText(user, tokenInfo, result.signature, amount / SOL_DECIMAL, tokenAmount),
@@ -293,6 +298,7 @@ export async function sellToken(user: UserType, mintAddress: string, amount: num
       user.wallet.privateKey,
       Math.floor(user.priorityFee * SOL_DECIMAL),
       user.slippageBps,
+      user.jitoFee,
       user.wallet.publicKey
     );
 
@@ -301,7 +307,7 @@ export async function sellToken(user: UserType, mintAddress: string, amount: num
       throw new Error(result.message || 'Transaction is expired.');
     }
 
-    await sleep(2500)
+    await sleep(2500);
     await bot.telegram.sendMessage(
       user.tgId,
       await sellSuccessText(user, tokenInfo, result.tokenOutDiff, result.signature),
@@ -345,7 +351,7 @@ export async function isValidToken(mintAddress: string) {
     return false;
   } catch (error) {
     console.error(error);
-    return false
+    return false;
   }
 }
 
@@ -407,7 +413,7 @@ export async function transferToken(
     bot.telegram.sendMessage(
       user.tgId,
       `🎉 <b>${balNoLamp}</b> Successfully transferred to <code>${destination.toString()}</code>\n` +
-      `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
+        `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
       { parse_mode: 'HTML' }
     );
   } catch (error: any) {
@@ -472,7 +478,7 @@ export async function transferSol(toPubkey: PublicKey, _balInLamp: number, user:
     bot.telegram.sendMessage(
       user.tgId,
       `🎉 <b>${lamports / SOL_DECIMAL}</b> SOL successfully transferred to <code>${toPubkey.toString()}</code>\n` +
-      `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
+        `<a href='https://solscan.io/tx/${signature}'>View on SolScan</a>`,
       { parse_mode: 'HTML' }
     );
   } catch (error) {
