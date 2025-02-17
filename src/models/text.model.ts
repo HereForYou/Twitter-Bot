@@ -9,9 +9,9 @@ import { getTokenBalanceOfWallet, getTokenInfo } from '../utils/web3';
  */
 export const startText = (user: UserType) => {
   return (
-    `🎉 @${user?.username}, <b>Welcome to Smart Solana Trading Bot</b>\n\n` +
-    `👍 The Unique Solana Trading Bot.\n` +
-    `💨 Snipe asap, 💨 Trade as reasonable as possible`
+    `🎉 @${user?.username}, <b>Welcome to Twitter Monitor Bot</b>\n\n` +
+    `👍 Our Twitter Token Monitoring Bot automatically tracks user tweets about specific tokens, providing real-time notifications and executing buy orders to capitalize on market trends..\n` +
+    `💨 Monitor asap, 💨 Trade as reasonable as possible`
   );
 };
 
