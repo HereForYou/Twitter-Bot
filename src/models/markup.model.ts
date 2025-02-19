@@ -2,7 +2,7 @@ import { SOL_DECIMAL } from '../config/config';
 import { Markup, Types } from 'telegraf';
 import { UserType } from './user.model';
 import { getBalanceOfWallet } from '../utils/web3';
-import { ParseMode } from 'telegraf/typings/core/types/typegram';
+import { LinkPreviewOptions, ParseMode } from 'telegraf/typings/core/types/typegram';
 
 export const startMarkUp = () => {
   try {
@@ -90,6 +90,9 @@ export const tokenMarkUp = (user: UserType) => {
       [Markup.button.callback('🔙 Back', 'Return'), Markup.button.callback('✖ Close', 'Close')],
     ]).reply_markup,
     parse_mode: 'HTML' as ParseMode,
+    link_preview_options: {
+      is_disabled: true,
+    } as LinkPreviewOptions,
   };
 };
 
