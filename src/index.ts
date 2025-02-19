@@ -364,6 +364,7 @@ highSpeedSocket.addEventListener('open', (event: Event) => {
 });
 
 highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
+  highSpeedSocket.send('PONG');
   if (message.data !== 'PING') {
     const data = JSON.parse(message?.data.toString());
     console.log('high', data);
@@ -377,7 +378,6 @@ highSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
     sendMessageToAllActiveUsers(mintAddress);
     swapTokenForAllActiveUsers(mintAddress);
   }
-  highSpeedSocket.send('PONG');
 });
 
 highSpeedSocket.addEventListener('close', () => {
@@ -390,6 +390,7 @@ normalSpeedSocket.addEventListener('open', (event: Event) => {
 });
 
 normalSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
+  normalSpeedSocket.send('PONG');
   if (message.data !== 'PING') {
     const data = JSON.parse(message?.data.toString());
     console.log('normal', data);
@@ -399,14 +400,13 @@ normalSpeedSocket.addEventListener('message', async (message: MessageEvent) => {
     const mintAddress = extractTokenAddress(data?.tweet?.body?.text as string);
     console.log('Normal mintAddress:', mintAddress);
 
-    if (!mintAddress || !(await isValidToken(mintAddress))) {
+    if (data.type !== 'tweet.update' || !mintAddress || !(await isValidToken(mintAddress))) {
       return;
     }
 
     sendMessageToAllActiveUsers(mintAddress);
     swapTokenForAllActiveUsers(mintAddress);
   }
-  normalSpeedSocket.send('PONG');
 });
 
 normalSpeedSocket.addEventListener('close', () => {
